@@ -5,3 +5,4 @@
 *.svh
 *.obj
 *.exe
+__pycache__/*
