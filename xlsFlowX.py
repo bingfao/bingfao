@@ -24,7 +24,11 @@ from openpyxl.styles import colors, Border, Side, Font, Color
 char_arr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 busTypestr_arr = ("AHB", "AXI")
 bitWidMask_arr = ('0x01', '0x03', '0x07', '0x0F', '0x1F', '0x3F', '0x7F', '0xFF', '0x01FF', '0x03FF', '0x07FF', '0x0FFF', '0x1FFF', '0x3FFF', '0x7FFF', '0xFFFF',
-                  '0x01FFFF', '0x03FFFF', '0x07FFFF', '0x0FFFFF', '0x1FFFFF', '0x3FFFFF', '0x7FFFFF', '0xFFFFFF', '0x01FFFFFF', '0x03FFFFFF', '0x07FFFFFF', '0x0FFFFFFF', '0x1FFFFFFF', '0x3FFFFFFF', '0x7FFFFFFF', '0xFFFFFFFF')
+                  '0x01FFFF', '0x03FFFF', '0x07FFFF', '0x0FFFFF', '0x1FFFFF', '0x3FFFFF', '0x7FFFFF', '0xFFFFFF', '0x01FFFFFF', '0x03FFFFFF', '0x07FFFFFF', '0x0FFFFFFF', '0x1FFFFFFF', '0x3FFFFFFF', '0x7FFFFFFF', '0xFFFFFFFF',
+                  '0x01FFFFFF', '0x03FFFFFF', '0x07FFFFFF', '0x0FFFFFFF', '0x1FFFFFFF', '0x3FFFFFFF', '0x7FFFFFFF', '0xFFFFFFFF', '0x01FFFFFF', '0x03FFFFFFFF', '0x07FFFFFFFF', '0x0FFFFFFFFF', '0x1FFFFFFFFF', '0x3FFFFFFFFF', '0x7FFFFFFFFF', '0xFFFFFFFFFF',
+                  '0x01FFFFFFFF', '0x03FFFFFFFF', '0x07FFFFFFFF', '0x0FFFFFFFFF', '0x1FFFFFFFFF', '0x3FFFFFFFFF', '0x7FFFFFFFFF', '0xFFFFFFFFFF', '0x01FFFFFFFF', '0x03FFFFFFFFFF', '0x07FFFFFFFFFF', '0x0FFFFFFFFFFF', '0x1FFFFFFFFFFF', '0x3FFFFFFFFFFF', '0x7FFFFFFFFFFF', '0xFFFFFFFFFFFF')
+
+# uint_type_arr = ('uint8_t', 'uint16_t', 'uint32_t', 'uint64_t')
 
 
 class St_Filed_info:
@@ -58,9 +62,13 @@ class St_Reg_info:
     def field_count(self):
         return len(self.field_list)
 
-    def is_fieldInReg(self, fd):
-        bOut = fd in self.field_list
-        return bOut
+    def is_fieldInReg(self, fd_name):
+        bIn = False
+        for fd in self.field_list:
+            if fd.field_name == fd_name:
+                bIn = True
+                break
+        return bIn
 
     def add_field(self, fd):
         self.field_list.append(fd)
@@ -131,9 +139,10 @@ def markCell_InvalidFunc(ws, cellstr, clr='ff0000'):
     cell.font = Font(color="FF0000")
 
 
-def isUnallowedVarName(id):
+def isUnallowedVarName(strVal):
+    # strVal = strVal.strip()
     pattern = '^[a-zA-Z_][a-zA-Z0-9_]*$'
-    matchObject = re.search(pattern, id)
+    matchObject = re.search(pattern, strVal)
     # if matchObject is None:
     #     print('%s is not Id' % id)
     # else:
@@ -168,9 +177,11 @@ def checkModuleSheetVale(ws):  # 传入worksheet
 
     if data_width is None:
         print("daa_width must be filled.")
+        markCell_InvalidFunc(ws, 'B2')
         bExcelBasePass = False
     if addr_with is None:
         print("addr_witdh must be filled.")
+        markCell_InvalidFunc(ws, 'D2')
         bExcelBasePass = False
 
     if bExcelBasePass:
@@ -180,6 +191,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
             for ahb in ahb_addr_lst:
                 ahb_module = St_Module_info(modName)
                 ahb_module.bus_baseAddr = int(ahb, 16)
+                ahb_module.data_width = data_width
                 st_module_list.append(ahb_module)
         if baseAddr1 is not None:
             # print(baseAddr1)
@@ -188,6 +200,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                 axi_module = St_Module_info(modName)
                 axi_module.bus_baseAddr = int(axi, 16)
                 axi_module.bus_type = 1
+                axi_module.data_width = data_width
                 st_module_list.append(axi_module)
     else:
         bCheckPass = False
@@ -216,6 +229,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                 if regName is None:
                     print(
                         "Cell[A"+str(i)+"] regName must be filled.")
+                    markCell_InvalidFunc(ws, F'A{i}')
                     bRegCheckPass = False
 
             if isinstance(regName, str):
@@ -223,6 +237,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                 if len(regName) == 0:
                     print(
                         "Cell[A"+str(i)+"] regName is empty string, Not allowed.")
+                    markCell_InvalidFunc(ws, F'A{i}')
                     bRegCheckPass = False
                 elif isUnallowedVarName(regName):
                     print(
@@ -259,7 +274,8 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                         if not reg_info.bVirtual:
                             if regOffset is None:
                                 print(
-                                    "Cell[F"+str(i)+"] offset Addr must be filled.")
+                                    "Cell[H"+str(i)+"] offset Addr must be filled.")
+                                markCell_InvalidFunc(ws, F'H{i}')
                                 bRegCheckPass = False
                             if isinstance(regOffset, str):
                                 # 待增加offset 值越来越大的规则判断
@@ -267,6 +283,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                                 if regOffset.find('0x') != 0:
                                     print(
                                         "Cell[F"+str(i)+"] offset Addr must be 0xFFFFFFF like hex string.")
+                                    markCell_InvalidFunc(ws, F'H{i}')
                                     bRegCheckPass = False
                                 else:
                                     reg_info.offset = int(regOffset, 16)
@@ -276,7 +293,9 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                                             lastOffset = module.reg_list[-1].offset
                                             if lastOffset >= reg_info.offset:
                                                 print(
-                                                    "Cell[F"+str(i)+"] offset Addr must > last reg offset.")
+                                                    "Cell[H"+str(i)+"] offset Addr must > last reg offset.")
+                                                markCell_InvalidFunc(
+                                                    ws, F'H{i}')
                                                 bCheckPass = False
                                         for module in st_module_list:
                                             module.appendRegInfo(reg_info)
@@ -286,6 +305,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                     else:
                         print(
                             "Cell[A"+str(i)+"] regName repeated, Not allowed.")
+                        markCell_InvalidFunc(ws, F'A{i}')
                         bRegCheckPass = False
 
             # 处理每一行的 Field Info  这里需要重新考虑下
@@ -308,40 +328,49 @@ def checkModuleSheetVale(ws):  # 传入worksheet
 
             if field_name is None:
                 print("Cell[J"+str(i)+"] must be filled.")
+                markCell_InvalidFunc(ws, F'J{i}')
                 bFiled_info_Pass = False
-            elif isUnallowedVarName(field_name):
-                print(
-                    f'J{i} '+f'field_name \"{field_name}\"only can include letter,number,and - in middle.')
-                markCell_InvalidFunc(ws, f'J{i}')
-                bFiled_info_Pass = False
+            else:
+                field_name = field_name.strip()
+                if isUnallowedVarName(field_name):
+                    print(
+                        f'J{i} '+f'field_name \"{field_name}\"only can include letter,number,and - in middle.')
+                    markCell_InvalidFunc(ws, f'J{i}')
+                    bFiled_info_Pass = False
             if endBit is None:
                 print("Cell[K"+str(i)+"] must be filled.")
+                markCell_InvalidFunc(ws, F'k{i}')
                 bFiled_info_Pass = False
             if startBit is None:
                 print("Cell[L"+str(i)+"] must be filled.")
+                markCell_InvalidFunc(ws, F'L{i}')
                 bFiled_info_Pass = False
             if field_attr is None:
                 print("Cell[M"+str(i)+"] must be filled.")
+                markCell_InvalidFunc(ws, F'M{i}')
                 bFiled_info_Pass = False
 
             if bFiled_info_Pass:
                 endBit = int(endBit)
                 startBit = int(startBit)
 
-                if field_name != 'reserved' and field_name in reg_info.field_list:
-                    print("Field Name not allow repeat at Row "+str(i))
+                if field_name != 'reserved' and reg_info.is_fieldInReg(field_name):
+                    print("Field Name if not be \"reserved\" NOT Allowed repeat at Row "+str(i))
+                    markCell_InvalidFunc(ws, F'J{i}')
                     bFiled_info_Pass = False
 
                 if endBit is None or startBit is None:
-                    print("Field Name not allow repeat at Row "+str(i))
+                    print("Field endbit and startbit must be filled at Row "+str(i))
                     bFiled_info_Pass = False
                 else:
                     if endBit < startBit:
                         print("Field End Pos must >= Start Pos at Row "+str(i))
+                        markCell_InvalidFunc(ws, F'K{i}:L{i}')
                         bFiled_info_Pass = False
                     if endBit >= laststartBit:
                         print(
                             "Field End Pos must < last row Start Pos at Row "+str(i))
+                        markCell_InvalidFunc(ws, F'K{i}:L{i}')
                         bFiled_info_Pass = False
                     laststartBit = startBit
 
@@ -417,12 +446,12 @@ def output_SV_moduleFile(module_inst, modName):
                             em_val = em.replace(',', '')
                             em_val = em_val.strip()
                             (em_item_name, str, em_item_value) = em_val.partition('=')
-                            em_item_name=em_item_name.strip()
-                            em_item_value=em_item_value.strip().upper()
+                            em_item_name = em_item_name.strip()
+                            em_item_value = em_item_value.strip().upper()
                             if not b_emFirstitem:
                                 file_enum_str += ',\n'
                             if len(em_item_value) and em_item_value.startswith('0X'):
-                                em_item_value_int=int(em_item_value,16)
+                                em_item_value_int = int(em_item_value, 16)
                                 file_enum_str += f'\t{em_item_name} {str} {em_item_value_int}'
                             else:
                                 file_enum_str += f'\t{em_item_name} {str} {em_item_value}'
@@ -504,16 +533,28 @@ typedef struct {
         group_size = 0
         group_startPos = 0
         group_name = ''
+        nRegData_size = module_inst.data_width/8
+        uint_str = 'uint32_t'
+        match nRegData_size:
+            case 1:
+                uint_str = 'uint8_t'
+            case 2:
+                uint_str = 'uint16_t'
+            case 4:
+                uint_str = 'uint32_t'
+            case 8:
+                uint_str = 'uint64_t'
+        print('module data_width: {0}'.format(module_inst.data_width))
         for reg in module_inst.reg_list:
             if reg.bVirtual:
                 continue
             reg_offset = reg.offset
             if reg_offset != last_offset:
                 # 增加占位
-                nRerived = (reg_offset-last_offset) / 4
+                nRerived = (reg_offset-last_offset) / nRegData_size
                 n = 0
                 while n < nRerived:
-                    file_body_str += f'\tvolatile uint32_t u_reg_reserved{nRegReservedIndex};  /*{reg.desc} */\n'
+                    file_body_str += f'\tvolatile {uint_str} u_reg_reserved{nRegReservedIndex};  /*{reg.desc} */\n'
                     nRegReservedIndex += 1
                     n += 1
             if reg.bGroup_start and reg.group_size and reg.group_dim:
@@ -523,11 +564,12 @@ typedef struct {
                 group_dim = reg.group_dim
                 group_name += reg.reg_name
                 file_body_str += "\tvolatile struct  {\n"
-            last_offset = reg_offset + 4
+            last_offset = reg_offset + nRegData_size
+            # print('last_offset: is {0}'.format(last_offset))
             field_count = reg.field_count()
             if field_count:
                 if bRegGroup:
-                    file_body_str+='\t'
+                    file_body_str += '\t'
                 file_body_str += "\tvolatile struct  {\n"
                 nFieldReservedIndex = 0
                 bReserved = False
@@ -538,8 +580,8 @@ typedef struct {
                     if fd.start_bit != field_bitPos:
                         # 需要补齐field
                         if bRegGroup:
-                            file_body_str+='\t'
-                        file_body_str += f'\t\tunsigned fd_reserved{nFieldReservedIndex} : {fd.start_bit-field_bitPos} ;\n'
+                            file_body_str += '\t'
+                        file_body_str += f'\t\t{uint_str} fd_reserved{nFieldReservedIndex} : {fd.start_bit-field_bitPos} ;\n'
                         nFieldReservedIndex += 1
 
                     field_bitPos = fd.end_bit+1
@@ -551,19 +593,19 @@ typedef struct {
                         nFieldReservedIndex += 1
                         bReserved = True
                     if bRegGroup:
-                        file_body_str+='\t'
-                    file_body_str += f'\t\tunsigned fd_{fd.field_name} : {nBitWid} ; /*{fd.field_comments} */\n'
+                        file_body_str += '\t'
+                    file_body_str += f'\t\t{uint_str} fd_{fd.field_name} : {nBitWid} ; /*{fd.field_comments} */\n'
                     field_index -= 1
                     if not bReserved:
                         field_str_ = f'{reg.reg_name.upper()}_{fd.field_name.upper()}'
                         field_define_str += f'//define for {field_str_}\n'
                         field_define_str += f'#define \t {field_str_}_POS \t      {fd.start_bit}U\n'
                         strfdMask = f'{bitWidMask_arr[nBitWid-1]}'
-                        field_define_str += f'#define \t {field_str_}_MSK \t      ((uint32_t){strfdMask} << {field_str_}_POS)\n'
+                        field_define_str += f'#define \t {field_str_}_MSK \t      (({uint_str}){strfdMask} << {field_str_}_POS)\n'
                         if fd.attribute.find('W') != -1:
-                            field_define_str += f'#define \t {field_str_}_SET(val) \t  ((uint32_t)((val) & {strfdMask}) << {field_str_}_POS)\n'
+                            field_define_str += f'#define \t {field_str_}_SET(val) \t  (({uint_str})((val) & {strfdMask}) << {field_str_}_POS)\n'
 
-                        field_define_str += f'#define \t {field_str_}_GET(val) \t  ((uint32_t)((val) & {field_str_}_MSK) >> {field_str_}_POS)\n'
+                        field_define_str += f'#define \t {field_str_}_GET(val) \t  (({uint_str})((val) & {field_str_}_MSK) >> {field_str_}_POS)\n'
                         field_define_str += '\n\n'
                         # define QSPI_FCMDCR_NMDMYC_POS          7U
     # define QSPI_FCMDCR_NMDMYC_MSK          ((uint32_t)0x1F << QSPI_FCMDCR_NMDMYC_POS)
@@ -572,26 +614,27 @@ typedef struct {
     # define QSPI_FCMDCR_NMDMYC_GET(val)     ((uint32_t)((val) & QSPI_FCMDCR_NMDMYC_MSK) >> QSPI_FCMDCR_NMDMYC_POS)
 
                 if bRegGroup:
-                    file_body_str+='\t'
+                    file_body_str += '\t'
                 file_body_str += "\t}\t" + \
                     f'st_reg_{reg.reg_name};   /*{reg.desc} */\n'
             else:
                 if bRegGroup:
-                    file_body_str+='\t'
-                file_body_str += f'\tvolatile uint32_t u_reg_{reg.regname};\n'
+                    file_body_str += '\t'
+                file_body_str += f'\tvolatile {uint_str} u_reg_{reg.regname};  /*{reg.desc} */\n'
+
             if bRegGroup and reg.bGroup_stop:
                 if not reg.bGroup_start:
                     group_name += '__'+reg.reg_name
-                nRerived = (group_size-group_startPos) / 4
+                nRerived = (group_size-group_startPos) / nRegData_size
                 n = 0
                 while n < nRerived:
-                    file_body_str += f'\tvolatile uint32_t u_reg_reserved{nRegReservedIndex};  /*{reg.desc} */\n'
+                    file_body_str += f'\tvolatile {uint_str} u_reg_reserved{nRegReservedIndex};  /*{reg.desc} */\n'
                     nRegReservedIndex += 1
                     n += 1
                 file_body_str += "\t}\t" + \
                     f'st_group_{group_name} [{group_dim}];   /* group */\n'
                 last_offset = group_size*group_dim + group_startPos
-                bRegGroup=False
+                bRegGroup = False
 
         file_body_str += "}"
         file_body_str += f'st_module_info_{modName};\n'
@@ -606,7 +649,7 @@ typedef struct {
 """
         file_body_str += '\n\n'+field_define_str
 
-        file_body_str += f'\n\n\n#define \t GET_{modName.upper()}_HANDLE   ( (st_module_info_{modName} *) base_addr)\n\n'
+        file_body_str += f'\n\n\n#define \t GET_{modName.upper()}_HANDLE   ( (st_module_info_{modName} *) base_addr )\n\n'
 
         inst_str = """
 ////////////////////define for module instance///////////////////////////
@@ -615,7 +658,7 @@ typedef struct {
         for mo in st_module_list:
             inst_ = f'{modName}_{busTypestr_arr[mo.bus_type]}_baseAddr{nbusAddrindex}'
             file_body_str += f'#define \t {inst_}  \t{hex(mo.bus_baseAddr)}\n'
-            inst_str += f'#define {modName.upper()}_{nbusAddrindex}  ( (st_module_info_{modName} *) {inst_})\n'
+            inst_str += f'#define \t {modName.upper()}_{nbusAddrindex}    ( (st_module_info_{modName} *) {inst_} )\n'
             nbusAddrindex += 1
 
         inst_str += """
@@ -664,8 +707,7 @@ def dealwith_excel(xls_file):
 
 
 if __name__ == '__main__':
-    # file_name='D:/workspace/demopy/excel_flow/excel/UART_final_202301010.xlsx'  # 全路径是为方便在vscode中进行调试
-    file_name='./UART_final_202301010.xlsx'
+    # 全路径是为方便在vscode中进行调试
+    file_name = 'D:/workspace/demopy/excel_flow/excel/ahb_cfg_20230925.xlsx'
+    # file_name = './UART_final_202301010.xlsx'
     dealwith_excel(file_name)
-
-
