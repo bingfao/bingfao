@@ -365,12 +365,12 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                 else:
                     if endBit < startBit:
                         print("Field End Pos must >= Start Pos at Row "+str(i))
-                        markCell_InvalidFunc(ws, F'K{i}:L{i}')
+                        markCell_InvalidFunc(ws, F'L{i}')
                         bFiled_info_Pass = False
                     if endBit >= laststartBit:
                         print(
                             "Field End Pos must < last row Start Pos at Row "+str(i))
-                        markCell_InvalidFunc(ws, F'K{i}:L{i}')
+                        markCell_InvalidFunc(ws, F'K{i}')
                         bFiled_info_Pass = False
                     laststartBit = startBit
 
