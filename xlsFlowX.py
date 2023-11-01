@@ -490,6 +490,7 @@ def output_SV_moduleFile(module_inst, modName):
 """
         file_cls_str += uvm_field_str
         file_cls_str += """endclass
+
 `endif
 """
         file_str += file_enum_str+'\n\n'
@@ -513,7 +514,8 @@ def output_C_moduleFile(st_module_list, module_inst, modName):
 #include <stdint.h>   //for use uint32_t type
 #ifdef __cplusplus
 extern "C" {
-#endif 
+#endif
+ 
 """
 
         file_body_str = """#pragma pack(4)
@@ -607,7 +609,7 @@ typedef struct {
 
                         field_define_str += f'#define \t {field_str_}_GET(val) \t  (({uint_str})((val) & {field_str_}_MSK) >> {field_str_}_POS)\n'
                         field_define_str += '\n\n'
-                        # define QSPI_FCMDCR_NMDMYC_POS          7U
+    # define QSPI_FCMDCR_NMDMYC_POS          7U
     # define QSPI_FCMDCR_NMDMYC_MSK          ((uint32_t)0x1F << QSPI_FCMDCR_NMDMYC_POS)
     # define QSPI_FCMDCR_NMDMYC              QSPI_FCMDCR_NMDMYC_MSK
     # define QSPI_FCMDCR_NMDMYC_SET(val)     ((uint32_t)((val) & 0x1F) << QSPI_FCMDCR_NMDMYC_POS)
@@ -665,13 +667,14 @@ typedef struct {
 ////////////////////end of define for module instance///////////////////////////
 """
         file_body_str += inst_str
-        file_body_str += f'\n#endif //endof  _CIP_MODULE_{modName}_DEFINE_\n'
-
+        
         file_body_str += """
 #ifdef __cplusplus
 }  //endof extern "C"
 #endif
 """
+
+        file_body_str += f'\n#endif //endof  _CIP_MODULE_{modName}_DEFINE_\n'
 
         out_file.write(fileHeader)
         out_file.write(file_body_str)
@@ -708,6 +711,6 @@ def dealwith_excel(xls_file):
 
 if __name__ == '__main__':
     # 全路径是为方便在vscode中进行调试
-    file_name = 'D:/workspace/demopy/excel_flow/excel/ahb_cfg_20230925.xlsx'
-    # file_name = './UART_final_202301010.xlsx'
+    # file_name = 'D:/workspace/demopy/excel_flow/excel/ahb_cfg_20230925.xlsx'
+    file_name = './UART_final_202301010.xlsx'
     dealwith_excel(file_name)
