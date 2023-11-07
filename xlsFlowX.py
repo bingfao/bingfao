@@ -771,9 +771,9 @@ int main()
                             filebodystr+=f'\tnRegFdVal = {module_fd_var};\n'
                             filebodystr += f'\tif(nRegFdVal != {fd.defaultValue})\n'
                             filebodystr += '\t{\n'
-                            filebodystr += f'\t\tERROR("module: {modinst_var} field: {fd_var} default value [%u] is not same as the excel described! \\n",nRegFdVal);\n'
+                            filebodystr += f'\t\tError("module: {modinst_var} field: {fd_var} default value [%u] is not same as the excel described! \\n",nRegFdVal);\n'
                             filebodystr += '\t\t++nErrCount;\n\t}\n'
-                            filebodystr += f'\telse\n\t\tINFO("module: {modinst_var} field: {fd_var} default value is same as the excel described! \\n");\n'
+                            filebodystr += f'\telse\n\t\tInfo("module: {modinst_var} field: {fd_var} default value is same as the excel described! \\n");\n'
                 else:
                     for fd in reg.field_list:
                         if fd.field_name.startswith('reserved'):
@@ -783,15 +783,15 @@ int main()
                         filebodystr+=f'\tnRegFdVal = {module_fd_var};\n'
                         filebodystr += f'\tif(nRegFdVal != {fd.defaultValue})\n'
                         filebodystr += '\t{\n'
-                        filebodystr += f'\t\tERROR("module: {modinst_var} field: {fd_var} default value [%u] is not same as the excel described! \\n",nRegFdVal);\n'
+                        filebodystr += f'\t\tError("module: {modinst_var} field: {fd_var} default value [%u] is not same as the excel described! \\n",nRegFdVal);\n'
                         filebodystr += '\t\t++nErrCount;\n\t}\n'
-                        filebodystr += f'\telse\n\t\tINFO("module: {modinst_var} field: {fd_var} default value is same as the excel described! \\n");\n'
+                        filebodystr += f'\telse\n\t\tInfo("module: {modinst_var} field: {fd_var} default value is same as the excel described! \\n");\n'
                 if reg.bGroup_stop:
                     group_dim = 0
             i += 1
         filebodystr += '\n\tif(nErrCount)\n'
-        filebodystr += f'\t\tFAIL("{modName} default values are not All Same!\\n");\n'
-        filebodystr += f'\telse\n\t\tPASS("{modName} default values are All Same!\\n");\n'
+        filebodystr += f'\t\tFail("{modName} default values are not All Same!\\n");\n'
+        filebodystr += f'\telse\n\t\tPass("{modName} default values are All Same!\\n");\n'
         filebodystr += '\treturn 0;\n}\n'
         out_file.write(fileHeader)
         out_file.write(filebodystr)
@@ -831,5 +831,5 @@ def dealwith_excel(xls_file):
 if __name__ == '__main__':
     # 全路径是为方便在vscode中进行调试
     # file_name = 'D:/workspace/demopy/excel_flow/excel/ahb_cfg_20230925.xlsx'
-    file_name = './UART_XY2.xlsx'
+    file_name = './UART_CFG_XY2.xlsx'
     dealwith_excel(file_name)
