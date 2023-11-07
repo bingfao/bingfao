@@ -6,3 +6,4 @@
 *.obj
 *.exe
 __pycache__/*
+.vscode/*

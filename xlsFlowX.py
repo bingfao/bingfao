@@ -58,6 +58,8 @@ class St_Reg_info:
         self.bGroup_stop = 0    # 是否是多组的结束
         self.group_dim = 0      # 有几组
         self.group_size = 0     # reg组的size
+        self.group_name = ''
+        self.group_index = -1
 
     def field_count(self):
         return len(self.field_list)
@@ -77,9 +79,13 @@ class St_Reg_info:
         return ""
 
     def reg_info_str(self):
-        out_str = f'regname: {self.reg_name}, offset_addr: {hex(self.offset)}, virtual: {self.bVirtual}'
-        for f in self.field_list:
-            out_str += "\n"+f.field_info_str()
+        group_info = ''
+        if self.group_index >= 0:
+            group_info = f'group: {self.group_name}, group_index: {self.group_index}, '
+        out_str = f'regname: {self.reg_name}, offset_addr: {hex(self.offset)}, {group_info} virtual: {self.bVirtual}'
+
+        # for f in self.field_list:
+        #     out_str += "\n"+f.field_info_str()
         return out_str
 
 
@@ -218,6 +224,8 @@ def checkModuleSheetVale(ws):  # 传入worksheet
     reg_info = St_Reg_info('error')
     # while i < nRows:
     #     bSkip = False
+    group_index = -1
+    group_name = ''
     for row in ws.iter_rows(min_row=6, max_col=19, max_row=nRows, values_only=True):
         if all(cell is None for cell in row):
             bSkip = True
@@ -270,6 +278,25 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                         if reg_info.bGroup_start:
                             reg_info.group_dim = group_dim
                             reg_info.group_size = group_size
+                            reg_info.group_index = 0
+                            group_name = f'st_group_{regName}'
+                            if not reg_info.bGroup_stop:
+                                group_index = 0
+                            else:
+                                reg_info.group_name = group_name
+                        elif reg_info.bGroup_stop:
+                            reg_info.group_index = group_index+1
+                            group_name += f'__{regName}'
+                            for module in st_module_list:
+                                for i in range(0 - reg_info.group_index,0):
+                                    reg = module.reg_list[i]
+                                    reg.group_name = group_name
+                            reg_info.group_name = group_name
+                            group_name = ''
+                            group_index = -1
+                        elif group_index > 0:
+                            group_index += 1
+                            reg_info.group_index = group_index
                         reg_info.desc = reg_desc
                         if not reg_info.bVirtual:
                             if regOffset is None:
@@ -355,7 +382,8 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                 startBit = int(startBit)
 
                 if field_name != 'reserved' and reg_info.is_fieldInReg(field_name):
-                    print("Field Name if not be \"reserved\" NOT Allowed repeat at Row "+str(i))
+                    print(
+                        "Field Name if not be \"reserved\" NOT Allowed repeat at Row "+str(i))
                     markCell_InvalidFunc(ws, F'J{i}')
                     bFiled_info_Pass = False
 
@@ -547,6 +575,7 @@ typedef struct {
             case 8:
                 uint_str = 'uint64_t'
         print('module data_width: {0}'.format(module_inst.data_width))
+        group_index = -1
         for reg in module_inst.reg_list:
             if reg.bVirtual:
                 continue
@@ -561,12 +590,14 @@ typedef struct {
                     n += 1
             if reg.bGroup_start and reg.group_size and reg.group_dim:
                 bRegGroup = True
+                group_index = 0
                 group_startPos = reg_offset
                 group_size = reg.group_size
                 group_dim = reg.group_dim
                 group_name += reg.reg_name
                 file_body_str += "\tvolatile struct  {\n"
             last_offset = reg_offset + nRegData_size
+
             # print('last_offset: is {0}'.format(last_offset))
             field_count = reg.field_count()
             if field_count:
@@ -574,7 +605,7 @@ typedef struct {
                     file_body_str += '\t'
                 file_body_str += "\tvolatile struct  {\n"
                 nFieldReservedIndex = 0
-                bReserved = False
+                
                 field_index = field_count-1
                 field_bitPos = 0
                 while field_index != -1:
@@ -585,7 +616,7 @@ typedef struct {
                             file_body_str += '\t'
                         file_body_str += f'\t\t{uint_str} fd_reserved{nFieldReservedIndex} : {fd.start_bit-field_bitPos} ;\n'
                         nFieldReservedIndex += 1
-
+                    bReserved = False
                     field_bitPos = fd.end_bit+1
                     fd.field_comments = fd.field_comments.replace(
                         '\n', ' ').replace('\r', ' ')
@@ -617,6 +648,7 @@ typedef struct {
 
                 if bRegGroup:
                     file_body_str += '\t'
+                    reg.group_index = group_index
                 file_body_str += "\t}\t" + \
                     f'st_reg_{reg.reg_name};   /*{reg.desc} */\n'
             else:
@@ -627,6 +659,7 @@ typedef struct {
             if bRegGroup and reg.bGroup_stop:
                 if not reg.bGroup_start:
                     group_name += '__'+reg.reg_name
+                    # 需要修改该group的其他reg的groupName
                 nRerived = (group_size-group_startPos) / nRegData_size
                 n = 0
                 while n < nRerived:
@@ -637,6 +670,8 @@ typedef struct {
                     f'st_group_{group_name} [{group_dim}];   /* group */\n'
                 last_offset = group_size*group_dim + group_startPos
                 bRegGroup = False
+            if bRegGroup:
+                group_index += 1
 
         file_body_str += "}"
         file_body_str += f'st_module_info_{modName};\n'
@@ -667,7 +702,7 @@ typedef struct {
 ////////////////////end of define for module instance///////////////////////////
 """
         file_body_str += inst_str
-        
+
         file_body_str += """
 #ifdef __cplusplus
 }  //endof extern "C"
@@ -678,6 +713,88 @@ typedef struct {
 
         out_file.write(fileHeader)
         out_file.write(file_body_str)
+        out_file.close()
+
+
+def outModuleFieldDefaultValueCheckCSrc(module_inst_list, modName):
+    # print(modName)
+    dirName = './module_check_defaultvalue/'+modName
+    if not os.path.exists(dirName):
+        os.makedirs(dirName)
+    out_C_file_Name = dirName+'/main.c'
+    with open(out_C_file_Name, 'w+') as out_file:
+        fileHeader = """// Autor: Auto generate by python From module excel\n
+// Version: 0.0.2 X
+// Description : field default value check for module instance \n
+// Waring: Do NOT Modify it !
+// Copyright (C) 2020-2021 CIP United Co. Ltd.  All Rights Reserved.
+
+#define DEBUG
+#define INFO
+#define WARNING
+#define NOTICE
+#define ERROR
+#define PASS
+#define FAIL
+
+#include "log.h"
+#include "pll.h"
+
+"""
+        filebodystr = f'#include "{modName}_reg.h"\n'
+        filebodystr += """
+int main()
+{
+    printf("enter main\\n");
+    uAptiv_clk_init();
+"""
+        filebodystr += f'\tunsigned int nErrCount=0;\n'
+        filebodystr += f'\tunsigned int nRegFdVal=0;\n'
+        i = 0
+        for module_inst in module_inst_list:
+            # print(module_inst.module_info_str())
+            modinst_var = f'{module_inst.module_name.upper()}_{i}'
+            group_dim = 0
+            for reg in module_inst.reg_list:
+                if reg.bVirtual:
+                    continue
+                if reg.bGroup_start and reg.group_dim:
+                    group_dim = reg.group_dim
+                if reg.group_index >=0 and reg.group_name:
+                    for g_i in range(0, group_dim):
+                        for fd in reg.field_list:
+                            if fd.field_name.startswith('reserved'):
+                                continue
+                            reg_fd_var=f'{reg.reg_name}.fd_{fd.field_name}'
+                            fd_var = f'{reg.group_name}[{g_i}].{reg_fd_var}'
+                            module_fd_var = f'{modinst_var}->{reg.group_name}[{g_i}].st_reg_{reg_fd_var}'
+                            filebodystr+=f'\tnRegFdVal = {module_fd_var};\n'
+                            filebodystr += f'\tif(nRegFdVal != {fd.defaultValue})\n'
+                            filebodystr += '\t{\n'
+                            filebodystr += f'\t\tERROR("module: {modinst_var} field: {fd_var} default value [%u] is not same as the excel described! \\n",nRegFdVal);\n'
+                            filebodystr += '\t\t++nErrCount;\n\t}\n'
+                            filebodystr += f'\telse\n\t\tINFO("module: {modinst_var} field: {fd_var} default value is same as the excel described! \\n");\n'
+                else:
+                    for fd in reg.field_list:
+                        if fd.field_name.startswith('reserved'):
+                            continue
+                        fd_var = f'{reg.reg_name}.fd_{fd.field_name}'
+                        module_fd_var = f'{modinst_var}->st_reg_{fd_var}'
+                        filebodystr+=f'\tnRegFdVal = {module_fd_var};\n'
+                        filebodystr += f'\tif(nRegFdVal != {fd.defaultValue})\n'
+                        filebodystr += '\t{\n'
+                        filebodystr += f'\t\tERROR("module: {modinst_var} field: {fd_var} default value [%u] is not same as the excel described! \\n",nRegFdVal);\n'
+                        filebodystr += '\t\t++nErrCount;\n\t}\n'
+                        filebodystr += f'\telse\n\t\tINFO("module: {modinst_var} field: {fd_var} default value is same as the excel described! \\n");\n'
+                if reg.bGroup_stop:
+                    group_dim = 0
+            i += 1
+        filebodystr += '\n\tif(nErrCount)\n'
+        filebodystr += f'\t\tFAIL("{modName} default values are not All Same!\\n");\n'
+        filebodystr += f'\telse\n\t\tPASS("{modName} default values are All Same!\\n");\n'
+        filebodystr += '\treturn 0;\n}\n'
+        out_file.write(fileHeader)
+        out_file.write(filebodystr)
         out_file.close()
 
 
@@ -696,6 +813,8 @@ def dealwith_excel(xls_file):
 
             output_SV_moduleFile(module_inst, modName)
 
+            outModuleFieldDefaultValueCheckCSrc(st_module_list, modName)
+
             # for module in st_module_list:
             #     print(module.module_info_str())
             # 实例化各个module
@@ -712,5 +831,5 @@ def dealwith_excel(xls_file):
 if __name__ == '__main__':
     # 全路径是为方便在vscode中进行调试
     # file_name = 'D:/workspace/demopy/excel_flow/excel/ahb_cfg_20230925.xlsx'
-    file_name = './UART_final_202301010.xlsx'
+    file_name = './UART_XY2.xlsx'
     dealwith_excel(file_name)
