@@ -288,7 +288,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                             reg_info.group_index = group_index+1
                             group_name += f'__{regName}'
                             for module in st_module_list:
-                                for i in range(0 - reg_info.group_index,0):
+                                for i in range(0 - reg_info.group_index, 0):
                                     reg = module.reg_list[i]
                                     reg.group_name = group_name
                             reg_info.group_name = group_name
@@ -605,7 +605,7 @@ typedef struct {
                     file_body_str += '\t'
                 file_body_str += "\tvolatile struct  {\n"
                 nFieldReservedIndex = 0
-                
+
                 field_index = field_count-1
                 field_bitPos = 0
                 while field_index != -1:
@@ -745,57 +745,145 @@ def outModuleFieldDefaultValueCheckCSrc(module_inst_list, modName):
         filebodystr += """
 int main()
 {
-    printf("enter main\\n");
+    printf("enter main.\\n");
     uAptiv_clk_init();
+    printf("after clock switch.\\n");
 """
-        filebodystr += f'\tunsigned int nErrCount=0;\n'
-        filebodystr += f'\tunsigned int nRegFdVal=0;\n'
-        i = 0
-        for module_inst in module_inst_list:
-            # print(module_inst.module_info_str())
-            modinst_var = f'{module_inst.module_name.upper()}_{i}'
-            group_dim = 0
-            for reg in module_inst.reg_list:
-                if reg.bVirtual:
-                    continue
-                if reg.bGroup_start and reg.group_dim:
-                    group_dim = reg.group_dim
-                if reg.group_index >=0 and reg.group_name:
-                    for g_i in range(0, group_dim):
-                        for fd in reg.field_list:
-                            if fd.field_name.startswith('reserved'):
-                                continue
-                            reg_fd_var=f'{reg.reg_name}.fd_{fd.field_name}'
-                            fd_var = f'{reg.group_name}[{g_i}].{reg_fd_var}'
-                            module_fd_var = f'{modinst_var}->{reg.group_name}[{g_i}].st_reg_{reg_fd_var}'
-                            filebodystr+=f'\tnRegFdVal = {module_fd_var};\n'
-                            filebodystr += f'\tif(nRegFdVal != {fd.defaultValue})\n'
-                            filebodystr += '\t{\n'
-                            filebodystr += f'\t\tError("module: {modinst_var} field: {fd_var} default value [%u] is not same as the excel described! \\n",nRegFdVal);\n'
-                            filebodystr += '\t\t++nErrCount;\n\t}\n'
-                            filebodystr += f'\telse\n\t\tInfo("module: {modinst_var} field: {fd_var} default value is same as the excel described! \\n");\n'
-                else:
-                    for fd in reg.field_list:
-                        if fd.field_name.startswith('reserved'):
-                            continue
-                        fd_var = f'{reg.reg_name}.fd_{fd.field_name}'
-                        module_fd_var = f'{modinst_var}->st_reg_{fd_var}'
-                        filebodystr+=f'\tnRegFdVal = {module_fd_var};\n'
-                        filebodystr += f'\tif(nRegFdVal != {fd.defaultValue})\n'
-                        filebodystr += '\t{\n'
-                        filebodystr += f'\t\tError("module: {modinst_var} field: {fd_var} default value [%u] is not same as the excel described! \\n",nRegFdVal);\n'
-                        filebodystr += '\t\t++nErrCount;\n\t}\n'
-                        filebodystr += f'\telse\n\t\tInfo("module: {modinst_var} field: {fd_var} default value is same as the excel described! \\n");\n'
-                if reg.bGroup_stop:
-                    group_dim = 0
-            i += 1
-        filebodystr += '\n\tif(nErrCount)\n'
-        filebodystr += f'\t\tFail("{modName} default values are not All Same!\\n");\n'
+        filebodystr += f'\tunsigned int nRegFdVal = 0;\n'
+        mod_count = len(module_inst_list)
+        mod_inst_name = modName.upper()
+        mod_inst = module_inst_list[0]
+        if mod_count > 1:
+            filebodystr += f'\tunsigned int nErrCount[{mod_count}] = '+'{0};\n'
+            filebodystr += f'\tst_module_info_{modName} * module_inst[{mod_count}] = ' + \
+                '{'+f'{mod_inst_name}_0'
+            for i in range(1, mod_count):
+                filebodystr += f'\n\t\t,{mod_inst_name}_{i}'
+            filebodystr += '};\n'
+            filebodystr += f'\n\tunsigned int nTotalErr = 0;\n'
+            filebodystr += f'\tfor(int i = 0; i < {mod_count}; ++i)\n'
+            filebodystr += '\t{\n'
+            modinst_var = 'module_inst[i]'
+            errCount_var = 'nErrCount[i]'
+            filebodystr += getModuleFdStr(mod_inst, errCount_var, modinst_var)
+            filebodystr += '\t\tif(nErrCount[i])\n'
+            filebodystr += '\t\t{\n'
+            filebodystr += f'\t\t\tError("{mod_inst_name}_%u default values have [%u] fields NOT Same!\\n",i,nErrCount[i]);\n'
+            filebodystr += '\t\t\tnTotalErr += nErrCount[i];\n'
+            filebodystr += '\t\t}\n'
+            filebodystr += f'\t\telse\n\t\t\tInfo("{mod_inst_name}_%u default values are All Same!\\n",i);\n'
+            filebodystr += '\t}\n'
+        elif mod_count == 1:
+            filebodystr += f'\tunsigned int nTotalErr = 0;\n'
+            filebodystr += f'\tst_module_info_{modName} * module_inst = {mod_inst_name}_0 ;\n'
+            modinst_var = 'module_inst'
+            errCount_var = 'nTotalErr'
+            filebodystr += getModuleFdStr(mod_inst, errCount_var, modinst_var,False)
+
+        # i = 0
+        # for module_inst in module_inst_list:
+        #     # print(module_inst.module_info_str())
+        #     modinst_var = f'{module_inst.module_name.upper()}_{i}'
+        #     group_dim = 0
+        #     for reg in module_inst.reg_list:
+        #         if reg.bVirtual:
+        #             continue
+        #         if reg.bGroup_start and reg.group_dim:
+        #             group_dim = reg.group_dim
+        #         if reg.group_index >= 0 and reg.group_name:
+        #             for g_i in range(0, group_dim):
+        #                 for fd in reg.field_list:
+        #                     if fd.field_name.startswith('reserved'):
+        #                         continue
+        #                     reg_fd_var = f'{reg.reg_name}.fd_{fd.field_name}'
+        #                     fd_var = f'{reg.group_name}[{g_i}].{reg_fd_var}'
+        #                     module_fd_var = f'{modinst_var}->{reg.group_name}[{g_i}].st_reg_{reg_fd_var}'
+        #                     filebodystr += f'\tnRegFdVal = {module_fd_var};\n'
+        #                     filebodystr += f'\tif(nRegFdVal != {fd.defaultValue})\n'
+        #                     filebodystr += '\t{\n'
+        #                     filebodystr += f'\t\tError("Module # FD: {modinst_var} # {fd_var} Value [0x%X] is not same! \\n",nRegFdVal);\n'
+        #                     filebodystr += f'\t\t++nErrCount[{i}];\n'
+        #                     filebodystr += '\t}\n'
+        #                     filebodystr += f'\telse\n\t\tInfo("Module # FD: {modinst_var} # {fd_var} Value is same. \\n");\n'
+        #         else:
+        #             for fd in reg.field_list:
+        #                 if fd.field_name.startswith('reserved'):
+        #                     continue
+        #                 fd_var = f'{reg.reg_name}.fd_{fd.field_name}'
+        #                 module_fd_var = f'{modinst_var}->st_reg_{fd_var}'
+        #                 filebodystr += f'\tnRegFdVal = {module_fd_var};\n'
+        #                 filebodystr += f'\tif(nRegFdVal != {fd.defaultValue})\n'
+        #                 filebodystr += '\t{\n'
+        #                 filebodystr += f'\t\tError("Module # FD: {modinst_var} # {fd_var} Value [0x%X] is not same! \\n",nRegFdVal);\n'
+        #                 filebodystr += f'\t\t++nErrCount[{i}];\n'
+        #                 filebodystr += '\t}\n'
+        #                 filebodystr += f'\telse\n\t\tInfo("Module # FD:: {modinst_var} # {fd_var} Value is same. \\n");\n'
+        #         if reg.bGroup_stop:
+        #             group_dim = 0
+        #     i += 1
+
+        # filebodystr += f'\n\tunsigned int nTotalErr = 0;\n'
+        # filebodystr +=f'\tfor(int i = 0; i < {mod_count}; ++i)\n'
+        # filebodystr +='\t{\n'
+        # filebodystr += '\t\tif(nErrCount[i])\n'
+        # filebodystr +='\t\t{\n'
+        # filebodystr += f'\t\t\tError("{mod_inst_name}_%u default values have [%u] fields NOT Same!\\n",i,nErrCount[i]);\n'
+        # filebodystr += '\t\t\tnTotalErr += nErrCount[i];\n'
+        # filebodystr +='\t\t}\n'
+        # filebodystr += f'\t\telse\n\t\t\tInfo("{mod_inst_name}_%u default values are All Same!\\n",i);\n'
+        # filebodystr +='\t}\n'
+
+        filebodystr += f'\n\tif(nTotalErr)\n'
+        filebodystr += f'\t\tFail("{modName} have [%u] values are NOT Same!\\n",nTotalErr);\n'
         filebodystr += f'\telse\n\t\tPass("{modName} default values are All Same!\\n");\n'
         filebodystr += '\treturn 0;\n}\n'
         out_file.write(fileHeader)
         out_file.write(filebodystr)
         out_file.close()
+
+
+def getModuleFdStr(mod_inst, errCount_var, modinst_var,bTab=True):
+    filebodystr = ''
+    group_dim = 0
+    str_Tab=''
+    if bTab:
+        str_Tab='\t'
+    for reg in mod_inst.reg_list:
+        if reg.bVirtual:
+            continue
+        if reg.bGroup_start and reg.group_dim:
+            group_dim = reg.group_dim
+        if reg.group_index >= 0 and reg.group_name:
+            for g_i in range(0, group_dim):
+                for fd in reg.field_list:
+                    if fd.field_name.startswith('reserved'):
+                        continue
+                    reg_fd_var = f'{reg.reg_name}.fd_{fd.field_name}'
+                    fd_var = f'{reg.group_name}[{g_i}].{reg_fd_var}'
+                    module_fd_var = f'{str_Tab}{modinst_var}->{reg.group_name}[{g_i}].st_reg_{reg_fd_var}'
+                    filebodystr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
+                    filebodystr += f'{str_Tab}\tif(nRegFdVal != {fd.defaultValue})\n{str_Tab}'
+                    filebodystr += '\t{\n'
+                    filebodystr += f'{str_Tab}\t\tError("Module # FD: {modinst_var} # {fd_var} Value [0x%X] is not same! \\n",nRegFdVal);\n'
+                    filebodystr += f'{str_Tab}\t\t++{errCount_var};\n{str_Tab}'
+                    filebodystr += '\t}\n'
+                    filebodystr += f'{str_Tab}\telse\n{str_Tab}\t\tInfo("Module # FD: {modinst_var} # {fd_var} Value is same. \\n");\n'
+        else:
+            for fd in reg.field_list:
+                if fd.field_name.startswith('reserved'):
+                    continue
+                fd_var = f'{reg.reg_name}.fd_{fd.field_name}'
+                module_fd_var = f'{modinst_var}->st_reg_{fd_var}'
+                filebodystr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
+                filebodystr += f'{str_Tab}\tif(nRegFdVal != {fd.defaultValue})\n{str_Tab}'
+                filebodystr += '\t{\n'
+                filebodystr += f'{str_Tab}\t\tError("Module # FD: {modinst_var} # {fd_var} Value [0x%X] is not same! \\n",nRegFdVal);\n'
+                filebodystr += f'{str_Tab}\t\t++{errCount_var};\n{str_Tab}'
+                filebodystr += '\t}\n'
+                filebodystr += f'{str_Tab}\telse\n{str_Tab}\t\tInfo("Module # FD:: {modinst_var} # {fd_var} Value is same. \\n");\n'
+        if reg.bGroup_stop:
+            group_dim = 0
+    return filebodystr
 
 
 def dealwith_excel(xls_file):
