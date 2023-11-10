@@ -3,6 +3,8 @@
 *.h
 *.c
 *.svh
+*.zip
+*.ralf
 *.obj
 *.exe
 __pycache__/*

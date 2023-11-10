@@ -40,6 +40,7 @@ class St_Filed_info:
         self.field_name = name
         self.field_comments = ''
         self.field_enumstr = ''
+        self.field_constr = ''
         self.bRandom_Enable = False
 
     def field_info_str(self):
@@ -96,6 +97,7 @@ class St_Module_info:
         self.addr_width = 32
         self.data_width = 32
         self.bus_type = 0
+        self.hdl_path = 'NULL'
         self.reg_list = []
 
     def reg_count(self):
@@ -163,6 +165,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
     baseAddr1 = ws['F2'].value
     data_width = ws['B2'].value
     addr_with = ws['D2'].value
+    hdl_path = ws['F1'].value
     bCheckPass = True
     bExcelBasePass = True
     st_module_list = []
@@ -406,15 +409,16 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                 field_inst = St_Filed_info(field_name, field_attr)
                 field_inst.end_bit = endBit
                 field_inst.start_bit = startBit
-                # default_val = ws.cell(i, 14).value
                 default_val = row[13]
+                field_constr = row[14]
                 field_enum = row[15]
                 if isinstance(default_val, str):
                     field_inst.defaultValue = int(default_val, 16)
                 if isinstance(field_enum, str):
                     field_inst.field_enumstr = field_enum
-                # comments = ws.cell(i, 19).value
-                # random_enable = ws.cell(i, 18).value
+                if isinstance(field_constr, str):
+                    field_inst.field_constr = field_constr
+
                 random_enable = row[17]
                 comments = row[18]
                 if isinstance(comments, str):
@@ -463,7 +467,7 @@ def output_SV_moduleFile(module_inst, modName):
                     bit_str = 'bit'
                     if nbit_Wid > 1:
                         bit_str = f'bit [{nbit_Wid-1}:0]'
-                    if len(fd.field_enumstr):
+                    if fd.field_enumstr:
                         # print(fd.field_enumstr)
                         b_fd_enum = True
                         enum_lst = fd.field_enumstr.splitlines()
@@ -585,7 +589,7 @@ typedef struct {
                 nRerived = (reg_offset-last_offset) / nRegData_size
                 n = 0
                 while n < nRerived:
-                    file_body_str += f'\tvolatile {uint_str} u_reg_reserved{nRegReservedIndex};  /*{reg.desc} */\n'
+                    file_body_str += f'\tvolatile {uint_str} u_reg_reserved{nRegReservedIndex};  \n'
                     nRegReservedIndex += 1
                     n += 1
             if reg.bGroup_start and reg.group_size and reg.group_dim:
@@ -597,6 +601,9 @@ typedef struct {
                 group_name += reg.reg_name
                 file_body_str += "\tvolatile struct  {\n"
             last_offset = reg_offset + nRegData_size
+            reg_desc_str = ''
+            if reg.desc:
+                reg_desc_str = f'/* {reg.desc} */'
 
             # print('last_offset: is {0}'.format(last_offset))
             field_count = reg.field_count()
@@ -605,7 +612,7 @@ typedef struct {
                     file_body_str += '\t'
                 file_body_str += "\tvolatile struct  {\n"
                 nFieldReservedIndex = 0
-
+                # filed_name=''
                 field_index = field_count-1
                 field_bitPos = 0
                 while field_index != -1:
@@ -621,16 +628,21 @@ typedef struct {
                     fd.field_comments = fd.field_comments.replace(
                         '\n', ' ').replace('\r', ' ')
                     nBitWid = field_bitPos-fd.start_bit
-                    if fd.field_name == 'reserved':
-                        fd.field_name = f'reserved{nFieldReservedIndex}'
+                    filed_name = fd.field_name
+                    if filed_name == 'reserved':
+                        filed_name = f'reserved{nFieldReservedIndex}'
                         nFieldReservedIndex += 1
                         bReserved = True
                     if bRegGroup:
                         file_body_str += '\t'
-                    file_body_str += f'\t\t{uint_str} fd_{fd.field_name} : {nBitWid} ; /*{fd.field_comments} */\n'
+                    fd_comments_str = ''
+                    if fd.field_comments:
+                        fd_comments_str = f'/*{fd.field_comments} */'
+                    if field_index != 0 or not bReserved:
+                        file_body_str += f'\t\t{uint_str} fd_{filed_name} : {nBitWid} ; {fd_comments_str}\n'
                     field_index -= 1
                     if not bReserved:
-                        field_str_ = f'{reg.reg_name.upper()}_{fd.field_name.upper()}'
+                        field_str_ = f'{reg.reg_name.upper()}_{filed_name.upper()}'
                         field_define_str += f'//define for {field_str_}\n'
                         field_define_str += f'#define \t {field_str_}_POS \t      {fd.start_bit}U\n'
                         strfdMask = f'{bitWidMask_arr[nBitWid-1]}'
@@ -650,11 +662,11 @@ typedef struct {
                     file_body_str += '\t'
                     reg.group_index = group_index
                 file_body_str += "\t}\t" + \
-                    f'st_reg_{reg.reg_name};   /*{reg.desc} */\n'
+                    f'st_reg_{reg.reg_name};   {reg_desc_str} \n'
             else:
                 if bRegGroup:
                     file_body_str += '\t'
-                file_body_str += f'\tvolatile {uint_str} u_reg_{reg.regname};  /*{reg.desc} */\n'
+                file_body_str += f'\tvolatile {uint_str} u_reg_{reg.regname};   {reg_desc_str} */\n'
 
             if bRegGroup and reg.bGroup_stop:
                 if not reg.bGroup_start:
@@ -663,7 +675,7 @@ typedef struct {
                 nRerived = (group_size-group_startPos) / nRegData_size
                 n = 0
                 while n < nRerived:
-                    file_body_str += f'\tvolatile {uint_str} u_reg_reserved{nRegReservedIndex};  /*{reg.desc} */\n'
+                    file_body_str += f'\tvolatile {uint_str} u_reg_reserved{nRegReservedIndex}; \n'
                     nRegReservedIndex += 1
                     n += 1
                 file_body_str += "\t}\t" + \
@@ -716,6 +728,188 @@ typedef struct {
         out_file.close()
 
 
+def output_ralf_moduleFile(module_inst, modName):
+    out_ralf_file_Name = modName+'.ralf'
+    with open('./'+out_ralf_file_Name, 'w+') as out_file:
+        fileHeader = """# Autor: Auto generate by python From module excel\n
+# Version: 0.0.2 X
+# Description : struct define for module \n
+# Waring: Do NOT Modify it !
+
+"""
+
+        nRegData_size = int(module_inst.data_width/8)
+        file_body_str = f'block {modName} ' + \
+            ' {\n\tbytes '+f'{nRegData_size};\n'
+
+        # 定义module的结构体
+        last_offset = 0
+        nRegReservedIndex = 0
+
+        bRegGroup = False
+        group_dim = 0
+        group_size = 0
+        group_startPos = 0
+        group_name = ''
+
+        # print('module data_width: {0}'.format(module_inst.data_width))
+        group_index = -1
+        for reg in module_inst.reg_list:
+            # if reg.bVirtual:
+            #     continue
+            reg_offset = reg.offset
+            # if reg_offset != last_offset:
+            #     # 增加占位
+            #     nRerived = (reg_offset-last_offset) / nRegData_size
+            #     n = 0
+            #     while n < nRerived:
+            #         if bRegGroup:
+            #             file_body_str += f'\tregister reg_reserved{nRegReservedIndex}' + \
+            #                 ' {\n\t\tbytes '+f'{nRegData_size};\n'+'\t}\n'
+            #         nRegReservedIndex += 1
+            #         n += 1
+            if reg.bGroup_start and reg.group_size and reg.group_dim:
+                bRegGroup = True
+                group_index = 0
+                group_startPos = reg_offset
+                group_size = reg.group_size
+                group_dim = reg.group_dim
+                # group_name += reg.reg_name
+                if reg.bGroup_stop:
+                    file_body_str += f'\tregister {reg.reg_name}[{group_dim}] @{reg.offset} + {group_size}'+' {\n'
+                    bRegGroup = False
+                else:
+                    file_body_str += f'\tregfile {reg.group_name}[{group_dim}] @{reg.offset} + {group_size}'+' {\n'
+                    file_body_str += f'\t\tregister {reg.reg_name} @{reg.offset-group_startPos}'+' {\n' + \
+                        '\t\tbytes '+f'{nRegData_size};\n'
+            str_Tab = ''
+            if bRegGroup:
+                str_Tab = '\t'
+                if reg.group_index != 0:
+                    file_body_str += f'\t\tregister {reg.reg_name} @{reg.offset-group_startPos}'+' {\n' + \
+                        ' \t\tbytes '+f'{nRegData_size};\n'
+            else:
+                if reg.group_index != 0:
+                    if reg.bVirtual:
+                        file_body_str += f'\tvirtual register  {reg.reg_name} '+' {\n'
+                    else:
+                        file_body_str += f'\tregister  {reg.reg_name} @{reg.offset}'+' {\n'
+                    file_body_str += F'\t\tbytes {nRegData_size};\n'
+
+            # last_offset = reg_offset + nRegData_size
+
+            # print('last_offset: is {0}'.format(last_offset))
+            field_count = reg.field_count()
+            if field_count:
+                # if bRegGroup:
+                #     file_body_str += f'\t\tregister {reg.reg_name} @{reg.offset-group_startPos}'+' {\n' + \
+                #     ' \t\tbytes '+f'{nRegData_size};\n'
+                # else:
+                #     file_body_str += f'\tregister {reg.reg_name} @{reg.offset}'+' {\n' + \
+                #     ' \t\tbytes '+f'{nRegData_size};\n'
+                # nFieldReservedIndex = 0
+
+                field_index = field_count-1
+                # field_bitPos = 0
+                while field_index != -1:
+                    fd = reg.field_list[field_index]
+                    # if fd.start_bit != field_bitPos:
+                    #     # 需要补齐field
+                    #     if bRegGroup:
+                    #         file_body_str += '\t'
+                    #     file_body_str += f'\t\tfield fd_reserved{nFieldReservedIndex} '+' {\n\t\t\t'
+                    #     if bRegGroup:
+                    #         file_body_str += '\t'
+                    #     file_body_str += f'bits: {fd.start_bit-field_bitPos} ;\n'
+                    #     if bRegGroup:
+                    #         file_body_str += '\t'
+                    #     file_body_str += '\t\t}'
+                    #     nFieldReservedIndex += 1
+                    bReserved = False
+                    field_bitPos = fd.end_bit+1
+                    fd.field_comments = fd.field_comments.replace(
+                        '\n', ' ').replace('\r', ' ')
+                    nBitWid = field_bitPos-fd.start_bit
+                    if fd.field_name == 'reserved':
+                        # fd.field_name = f'reserved{nFieldReservedIndex}'
+                        # nFieldReservedIndex += 1
+                        bReserved = True
+                    if not bReserved:
+                        file_body_str += f'{str_Tab}\t\tfield fd_{fd.field_name} @{fd.start_bit}'+' {\n'
+                        file_body_str += f'{str_Tab}\t\t\tbits {nBitWid} ;\n'
+                        file_body_str += f'{str_Tab}\t\t\treset {fd.defaultValue} ;\n'
+                        if fd.attribute:
+                            file_body_str += f'{str_Tab}\t\t\taccess {fd.attribute.lower()} ;\n'
+                        if fd.field_enumstr:
+                            # print(fd.field_enumstr)
+                            b_fd_enum = True
+                            enum_lst = fd.field_enumstr.splitlines()
+                            field_enum_str = f'{str_Tab}\t\t\tenum '+' {\n'
+                            b_emFirstitem = True
+                            for em in enum_lst:
+                                # print(em)
+                                em_val = em.replace(',', '')
+                                em_val = em_val.strip()
+                                (em_item_name, str,
+                                 em_item_value) = em_val.partition('=')
+                                em_item_name = em_item_name.strip()
+                                em_item_value = em_item_value.strip().upper()
+                                if not b_emFirstitem:
+                                    field_enum_str += ',\n'
+                                if em_item_value and em_item_value.startswith('0X'):
+                                    em_item_value_int = int(em_item_value, 16)
+                                    field_enum_str += f'{str_Tab}\t\t\t\t{em_item_name} {str} {em_item_value_int}'
+                                else:
+                                    field_enum_str += f'{str_Tab}\t\t\t\t{em_item_name} {str} {em_item_value}'
+                                b_emFirstitem = False
+                                # file_str
+                            field_enum_str += f'\n{str_Tab}\t\t\t'+'} \n'
+                            file_body_str += field_enum_str
+                        file_body_str += f'{str_Tab}\t\t\tconstraint c_st_{fd.field_name} ' + '{\n\t\t\t'
+                        file_body_str += str_Tab+'}\n'
+
+                        file_body_str += str_Tab+'\t\t}'
+                        if fd.field_comments:
+                            file_body_str += f'; #{fd.field_comments} \n'
+                        else:
+                            file_body_str += '\n'
+                    field_index -= 1
+                # if bRegGroup:
+                #     reg.group_index = group_index
+                file_body_str += str_Tab+'\t}; ' + f' #{reg.desc} \n'
+            else:
+                file_body_str += f'{str_Tab}\tregister  {reg.regname} @{reg.offset-group_startPos}'+' {\n'
+                file_body_str += F'{str_Tab}\t\tbytes {nRegData_size};\n'
+                file_body_str += str_Tab+'\t\tfield reserved {\n'
+                file_body_str += str_Tab+'\t\t\tbits 4 ;\n'
+                file_body_str += str_Tab+'\t\t}\n'
+                file_body_str += str_Tab+'\t}'+f';  #{reg.desc}\n'
+
+            if bRegGroup and reg.bGroup_stop:
+                # if not reg.bGroup_start:
+                #     group_name += '__'+reg.reg_name
+                #     # 需要修改该group的其他reg的groupName
+                # nRerived = (group_size-group_startPos) / nRegData_size
+                # n = 0
+                # while n < nRerived:
+                #     file_body_str += f'\tregister  reg_reserved{nRegReservedIndex} ' + '{\n'
+                #     file_body_str += F'\t\tbytes {nRegData_size};\n'
+                #     file_body_str += '\t}'+f';  #{reg.desc}\n'
+                #     nRegReservedIndex += 1
+                #     n += 1
+                file_body_str += "\t} ; " + \
+                    f'#group_{group_name} [{group_dim}]\n'
+                # last_offset = group_size*group_dim + group_startPos
+                bRegGroup = False
+            if bRegGroup:
+                group_index += 1
+
+        file_body_str += '\n}; # End of block module '+modName+'\n'
+        out_file.write(fileHeader)
+        out_file.write(file_body_str)
+        out_file.close()
+
+
 def outModuleFieldDefaultValueCheckCSrc(module_inst_list, modName):
     # print(modName)
     dirName = './module_check_defaultvalue/'+modName
@@ -730,7 +924,7 @@ def outModuleFieldDefaultValueCheckCSrc(module_inst_list, modName):
 // Copyright (C) 2020-2021 CIP United Co. Ltd.  All Rights Reserved.
 
 #define DEBUG
-#define INFO
+//#define INFO
 #define WARNING
 #define NOTICE
 #define ERROR
@@ -745,14 +939,18 @@ def outModuleFieldDefaultValueCheckCSrc(module_inst_list, modName):
         filebodystr += """
 int main()
 {
-    printf("enter main.\\n");
+    //printf("enter main.\\n");
     uAptiv_clk_init();
-    printf("after clock switch.\\n");
 """
-        filebodystr += f'\tunsigned int nRegFdVal = 0;\n'
-        mod_count = len(module_inst_list)
         mod_inst_name = modName.upper()
         mod_inst = module_inst_list[0]
+        filebodystr += f'\tprintf("After clock switch, Now Check Module: {modName}.\\n");\n'
+        if mod_inst.data_width > 32:
+            filebodystr += f'\tuint64_t nRegFdVal = 0;\n'
+        else:
+            filebodystr += f'\tunsigned int nRegFdVal = 0;\n'
+        mod_count = len(module_inst_list)
+
         if mod_count > 1:
             filebodystr += f'\tunsigned int nErrCount[{mod_count}] = '+'{0};\n'
             filebodystr += f'\tst_module_info_{modName} * module_inst[{mod_count}] = ' + \
@@ -768,17 +966,18 @@ int main()
             filebodystr += getModuleFdStr(mod_inst, errCount_var, modinst_var)
             filebodystr += '\t\tif(nErrCount[i])\n'
             filebodystr += '\t\t{\n'
-            filebodystr += f'\t\t\tError("{mod_inst_name}_%u default values have [%u] fields NOT Same!\\n",i,nErrCount[i]);\n'
+            filebodystr += f'\t\t\tError("Inst_%u def-Vals have [%u] fds NOT Same!\\n", i, nErrCount[i]);\n'
             filebodystr += '\t\t\tnTotalErr += nErrCount[i];\n'
             filebodystr += '\t\t}\n'
-            filebodystr += f'\t\telse\n\t\t\tInfo("{mod_inst_name}_%u default values are All Same!\\n",i);\n'
+            filebodystr += f'\t\telse\n\t\t\tNotice("Inst_%u def-Vals are OK!\\n", i);\n'
             filebodystr += '\t}\n'
         elif mod_count == 1:
             filebodystr += f'\tunsigned int nTotalErr = 0;\n'
             filebodystr += f'\tst_module_info_{modName} * module_inst = {mod_inst_name}_0 ;\n'
             modinst_var = 'module_inst'
             errCount_var = 'nTotalErr'
-            filebodystr += getModuleFdStr(mod_inst, errCount_var, modinst_var,False)
+            filebodystr += getModuleFdStr(mod_inst,
+                                          errCount_var, modinst_var, False)
 
         # i = 0
         # for module_inst in module_inst_list:
@@ -834,20 +1033,21 @@ int main()
         # filebodystr +='\t}\n'
 
         filebodystr += f'\n\tif(nTotalErr)\n'
-        filebodystr += f'\t\tFail("{modName} have [%u] values are NOT Same!\\n",nTotalErr);\n'
-        filebodystr += f'\telse\n\t\tPass("{modName} default values are All Same!\\n");\n'
-        filebodystr += '\treturn 0;\n}\n'
+        filebodystr += f'\t\tFail("{modName} have [%u] def-Vals are NOT Same!\\n", nTotalErr);\n'
+        filebodystr += f'\telse\n\t\tPass("{modName} def-Vals OK!\\n");\n'
+        filebodystr += '\n\treturn 0;\n}\n'
         out_file.write(fileHeader)
         out_file.write(filebodystr)
         out_file.close()
 
 
-def getModuleFdStr(mod_inst, errCount_var, modinst_var,bTab=True):
+def getModuleFdStr(mod_inst, errCount_var, modinst_var, bForLoop=True):
     filebodystr = ''
     group_dim = 0
-    str_Tab=''
-    if bTab:
-        str_Tab='\t'
+    str_Tab = ''
+    if bForLoop:
+        str_Tab = '\t'
+    # mod_name = mod_inst.module_name
     for reg in mod_inst.reg_list:
         if reg.bVirtual:
             continue
@@ -859,15 +1059,22 @@ def getModuleFdStr(mod_inst, errCount_var, modinst_var,bTab=True):
                     if fd.field_name.startswith('reserved'):
                         continue
                     reg_fd_var = f'{reg.reg_name}.fd_{fd.field_name}'
-                    fd_var = f'{reg.group_name}[{g_i}].{reg_fd_var}'
+                    group_name = reg.group_name[8:]
+                    fd_var = f'gp{group_name}[{g_i}].{reg_fd_var}'
                     module_fd_var = f'{str_Tab}{modinst_var}->{reg.group_name}[{g_i}].st_reg_{reg_fd_var}'
                     filebodystr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
                     filebodystr += f'{str_Tab}\tif(nRegFdVal != {fd.defaultValue})\n{str_Tab}'
                     filebodystr += '\t{\n'
-                    filebodystr += f'{str_Tab}\t\tError("Module # FD: {modinst_var} # {fd_var} Value [0x%X] is not same! \\n",nRegFdVal);\n'
+                    if bForLoop:
+                        filebodystr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] is NOt same! \\n", i, nRegFdVal);\n'
+                    else:
+                        filebodystr += f'{str_Tab}\t\tError("{fd_var}  [0x%X] is NOt same! \\n", nRegFdVal);\n'
                     filebodystr += f'{str_Tab}\t\t++{errCount_var};\n{str_Tab}'
                     filebodystr += '\t}\n'
-                    filebodystr += f'{str_Tab}\telse\n{str_Tab}\t\tInfo("Module # FD: {modinst_var} # {fd_var} Value is same. \\n");\n'
+                    if bForLoop:
+                        filebodystr += f'{str_Tab}\telse\n{str_Tab}\t\tInfo("Inst_%u # {fd_var} Value is OK. \\n", i);\n'
+                    else:
+                        filebodystr += f'{str_Tab}\telse\n{str_Tab}\t\tInfo("{fd_var} Value is OK. \\n");\n'
         else:
             for fd in reg.field_list:
                 if fd.field_name.startswith('reserved'):
@@ -877,10 +1084,16 @@ def getModuleFdStr(mod_inst, errCount_var, modinst_var,bTab=True):
                 filebodystr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
                 filebodystr += f'{str_Tab}\tif(nRegFdVal != {fd.defaultValue})\n{str_Tab}'
                 filebodystr += '\t{\n'
-                filebodystr += f'{str_Tab}\t\tError("Module # FD: {modinst_var} # {fd_var} Value [0x%X] is not same! \\n",nRegFdVal);\n'
+                if bForLoop:
+                    filebodystr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] is not same! \\n", i, nRegFdVal);\n'
+                else:
+                    filebodystr += f'{str_Tab}\t\tError("{fd_var}  [0x%X] is not same! \\n", nRegFdVal);\n'
                 filebodystr += f'{str_Tab}\t\t++{errCount_var};\n{str_Tab}'
                 filebodystr += '\t}\n'
-                filebodystr += f'{str_Tab}\telse\n{str_Tab}\t\tInfo("Module # FD:: {modinst_var} # {fd_var} Value is same. \\n");\n'
+                if bForLoop:
+                    filebodystr += f'{str_Tab}\telse\n{str_Tab}\t\tInfo("Inst_%u # {fd_var} Value is OK. \\n", i);\n'
+                else:
+                    filebodystr += f'{str_Tab}\telse\n{str_Tab}\t\tInfo("{fd_var} Value is OK. \\n");\n'
         if reg.bGroup_stop:
             group_dim = 0
     return filebodystr
@@ -892,7 +1105,8 @@ def dealwith_excel(xls_file):
     ws = wb.active
     st_module_list, bCheckPass = checkModuleSheetVale(ws)
     if bCheckPass:
-        if len(st_module_list):
+        mod_inst_count = len(st_module_list)
+        if mod_inst_count:
             module_inst = st_module_list[0]
             modName = module_inst.module_name
             print('module name: {0}.'.format(modName))
@@ -901,7 +1115,18 @@ def dealwith_excel(xls_file):
 
             output_SV_moduleFile(module_inst, modName)
 
-            outModuleFieldDefaultValueCheckCSrc(st_module_list, modName)
+            ahb_pos = 1
+            for index in range(mod_inst_count):
+                if st_module_list[index].bus_type:
+                    ahb_pos = index
+                    break
+            # print(ahb_pos)
+            outModuleFieldDefaultValueCheckCSrc(
+                st_module_list[0:ahb_pos], modName)
+
+            output_ralf_moduleFile(module_inst, modName)
+
+            # outModuleFieldDefaultValueCheckCSrc(st_module_list[0:1], modName)
 
             # for module in st_module_list:
             #     print(module.module_info_str())
