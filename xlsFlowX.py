@@ -443,7 +443,8 @@ def checkModuleSheetVale(ws):  # 传入worksheet
 
 def output_SV_moduleFile(module_inst, modName):
     out_svh_module_Name = modName.lower()+'_dut_cfg'
-    with open('./'+out_svh_module_Name+'.svh', 'w+') as sv_file:
+    out_svh_file_name='./'+out_svh_module_Name+'.svh'
+    with open(out_svh_file_name, 'w+') as sv_file:
         heder_str = f'_{modName.upper()}_DUT_CFG_SVH_'
         file_str = F'`ifndef {heder_str}\n`define {heder_str}\n\n'
 
@@ -530,10 +531,13 @@ def output_SV_moduleFile(module_inst, modName):
         sv_file.write(file_str)
         sv_file.close()
 
+        return out_svh_file_name
+
 
 def output_C_moduleFile(st_module_list, module_inst, modName):
     out_C_file_Name = modName+'_reg'
-    with open('./'+out_C_file_Name+'.h', 'w+') as out_file:
+    out_file_name='./'+out_C_file_Name+'.h'
+    with open(out_file_name, 'w+') as out_file:
         fileHeader = """// Autor: Auto generate by python From module excel\n
 // Version: 0.0.2 X
 // Description : struct define for module \n
@@ -726,11 +730,12 @@ typedef struct {
         out_file.write(fileHeader)
         out_file.write(file_body_str)
         out_file.close()
+        return out_file_name
 
 
 def output_ralf_moduleFile(module_inst, modName):
-    out_ralf_file_Name = modName+'.ralf'
-    with open('./'+out_ralf_file_Name, 'w+') as out_file:
+    out_ralf_file_Name ='./'+ modName+'.ralf'
+    with open(out_ralf_file_Name, 'w+') as out_file:
         fileHeader = """# Autor: Auto generate by python From module excel\n
 # Version: 0.0.2 X
 # Description : struct define for module \n
@@ -908,6 +913,7 @@ def output_ralf_moduleFile(module_inst, modName):
         out_file.write(fileHeader)
         out_file.write(file_body_str)
         out_file.close()
+        return out_ralf_file_Name
 
 
 def outModuleFieldDefaultValueCheckCSrc(module_inst_list, modName):
@@ -1040,6 +1046,8 @@ int main()
         out_file.write(filebodystr)
         out_file.close()
 
+        return out_C_file_Name
+
 
 def getModuleFdStr(mod_inst, errCount_var, modinst_var, bForLoop=True):
     filebodystr = ''
@@ -1111,9 +1119,14 @@ def dealwith_excel(xls_file):
             modName = module_inst.module_name
             print('module name: {0}.'.format(modName))
 
-            output_C_moduleFile(st_module_list, module_inst, modName)
+            out_file_list=[]
+            out_file_name=output_C_moduleFile(st_module_list, module_inst, modName)
+            if(out_file_name):
+                out_file_list.append(out_file_name)
 
-            output_SV_moduleFile(module_inst, modName)
+            out_file_name=output_SV_moduleFile(module_inst, modName)
+            if(out_file_name):
+                out_file_list.append(out_file_name)
 
             ahb_pos = 1
             for index in range(mod_inst_count):
@@ -1121,16 +1134,25 @@ def dealwith_excel(xls_file):
                     ahb_pos = index
                     break
             # print(ahb_pos)
-            outModuleFieldDefaultValueCheckCSrc(
+            out_file_name=outModuleFieldDefaultValueCheckCSrc(
                 st_module_list[0:ahb_pos], modName)
+            if(out_file_name):
+                out_file_list.append(out_file_name)
 
-            output_ralf_moduleFile(module_inst, modName)
+            out_file_name=output_ralf_moduleFile(module_inst, modName)
+
+            if(out_file_name):
+                out_file_list.append(out_file_name)
+
+            
 
             # outModuleFieldDefaultValueCheckCSrc(st_module_list[0:1], modName)
 
             # for module in st_module_list:
             #     print(module.module_info_str())
             # 实例化各个module
+
+            return out_file_list
     else:
         print("Check Failed. Please review the excel file and fix it.")
         filename = os.path.basename(xls_file)
