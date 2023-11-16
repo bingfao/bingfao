@@ -28,6 +28,12 @@ bitWidMask_arr = ('0x01', '0x03', '0x07', '0x0F', '0x1F', '0x3F', '0x7F', '0xFF'
                   '0x01FFFFFF', '0x03FFFFFF', '0x07FFFFFF', '0x0FFFFFFF', '0x1FFFFFFF', '0x3FFFFFFF', '0x7FFFFFFF', '0xFFFFFFFF', '0x01FFFFFF', '0x03FFFFFFFF', '0x07FFFFFFFF', '0x0FFFFFFFFF', '0x1FFFFFFFFF', '0x3FFFFFFFFF', '0x7FFFFFFFFF', '0xFFFFFFFFFF',
                   '0x01FFFFFFFF', '0x03FFFFFFFF', '0x07FFFFFFFF', '0x0FFFFFFFFF', '0x1FFFFFFFFF', '0x3FFFFFFFFF', '0x7FFFFFFFFF', '0xFFFFFFFFFF', '0x01FFFFFFFF', '0x03FFFFFFFFFF', '0x07FFFFFFFFFF', '0x0FFFFFFFFFFF', '0x1FFFFFFFFFFF', '0x3FFFFFFFFFFF', '0x7FFFFFFFFFFF', '0xFFFFFFFFFFFF')
 
+fieldRWOp_arr = ('rw', 'ro', 'wo', 'w1', 'w1c', 'rc', 'rs', 'wrc', 'wrs', 'wc', 'ws', 'wsrc', 'wcrs', 'w1s', 'w1t', 'w0c',
+                 'w0s', 'w0t', 'w1src', 'w1crs', 'w0src', 'w0crs', 'woc', 'wos', 'wo1')
+
+# RW, RO, WO, W1, W1C, RC, RS, WRC, WRS, WC, WS, WSRC, WCRS, W1S, W1T, W0C, 
+#                  W0S, W0T, W1SRC, W1CRS, W0SRC, W0CRS, W0C, W0S, WO1
+
 # uint_type_arr = ('uint8_t', 'uint16_t', 'uint32_t', 'uint64_t')
 
 
@@ -379,6 +385,10 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                 print("Cell[M"+str(i)+"] must be filled.")
                 markCell_InvalidFunc(ws, F'M{i}')
                 bFiled_info_Pass = False
+            elif field_attr.lower() not in fieldRWOp_arr:
+                print("Cell[M"+str(i)+"] must be rw attribute string.")
+                markCell_InvalidFunc(ws, F'M{i}')
+                bFiled_info_Pass = False
 
             if bFiled_info_Pass:
                 endBit = int(endBit)
@@ -406,7 +416,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                     laststartBit = startBit
 
             if bFiled_info_Pass:
-                field_inst = St_Filed_info(field_name, field_attr)
+                field_inst = St_Filed_info(field_name, field_attr.upper())
                 field_inst.end_bit = endBit
                 field_inst.start_bit = startBit
                 default_val = row[13]
@@ -443,7 +453,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
 
 def output_SV_moduleFile(module_inst, modName):
     out_svh_module_Name = modName.lower()+'_dut_cfg'
-    out_svh_file_name='./'+out_svh_module_Name+'.svh'
+    out_svh_file_name = './'+out_svh_module_Name+'.svh'
     with open(out_svh_file_name, 'w+') as sv_file:
         heder_str = f'_{modName.upper()}_DUT_CFG_SVH_'
         file_str = F'`ifndef {heder_str}\n`define {heder_str}\n\n'
@@ -536,7 +546,7 @@ def output_SV_moduleFile(module_inst, modName):
 
 def output_C_moduleFile(st_module_list, module_inst, modName):
     out_C_file_Name = modName+'_reg'
-    out_file_name='./'+out_C_file_Name+'.h'
+    out_file_name = './'+out_C_file_Name+'.h'
     with open(out_file_name, 'w+') as out_file:
         fileHeader = """// Autor: Auto generate by python From module excel\n
 // Version: 0.0.2 X
@@ -734,7 +744,7 @@ typedef struct {
 
 
 def output_ralf_moduleFile(module_inst, modName):
-    out_ralf_file_Name ='./'+ modName+'.ralf'
+    out_ralf_file_Name = './' + modName+'.ralf'
     with open(out_ralf_file_Name, 'w+') as out_file:
         fileHeader = """# Autor: Auto generate by python From module excel\n
 # Version: 0.0.2 X
@@ -847,7 +857,7 @@ def output_ralf_moduleFile(module_inst, modName):
                             file_body_str += f'{str_Tab}\t\t\taccess {fd.attribute.lower()} ;\n'
                         if fd.field_enumstr:
                             # print(fd.field_enumstr)
-                            b_fd_enum = True
+                            # b_fd_enum = True
                             enum_lst = fd.field_enumstr.splitlines()
                             field_enum_str = f'{str_Tab}\t\t\tenum '+' {\n'
                             b_emFirstitem = True
@@ -937,6 +947,10 @@ def outModuleFieldDefaultValueCheckCSrc(module_inst_list, modName):
 #define PASS
 #define FAIL
 
+#define CHECK_MODULE_FIELD_DEFAULT_VALUE
+
+#define CHECK_MOUDLE_FIELD_WRITE_VALUE
+
 #include "log.h"
 #include "pll.h"
 
@@ -957,33 +971,86 @@ int main()
             filebodystr += f'\tunsigned int nRegFdVal = 0;\n'
         mod_count = len(module_inst_list)
 
+        filebodystr += f'\n\tunsigned int nTotalErr = 0;\n'
         if mod_count > 1:
-            filebodystr += f'\tunsigned int nErrCount[{mod_count}] = '+'{0};\n'
             filebodystr += f'\tst_module_info_{modName} * module_inst[{mod_count}] = ' + \
                 '{'+f'{mod_inst_name}_0'
             for i in range(1, mod_count):
                 filebodystr += f'\n\t\t,{mod_inst_name}_{i}'
-            filebodystr += '};\n'
-            filebodystr += f'\n\tunsigned int nTotalErr = 0;\n'
+            filebodystr += '};\n\n'
+            filebodystr += '#ifdef CHECK_MODULE_FIELD_DEFAULT_VALUE\n'
+            filebodystr += f'\tunsigned int nErrCount_default[{mod_count}] = '+'{0};\n'
+            filebodystr += '#endif // CHECK_MODULE_FIELD_DEFAULT_VALUE\n\n'
+
+            filebodystr += '#ifdef CHECK_MOUDLE_FIELD_WRITE_VALUE\n'
+            filebodystr += f'\tunsigned int nErrCount_wirte[{mod_count}] = '+'{0};\n'
+            filebodystr += '#endif // CHECK_MOUDLE_FIELD_WRITE_VALUE\n\n'
+
+
+           
             filebodystr += f'\tfor(int i = 0; i < {mod_count}; ++i)\n'
             filebodystr += '\t{\n'
+            filebodystr += '#ifdef CHECK_MODULE_FIELD_DEFAULT_VALUE\n'
             modinst_var = 'module_inst[i]'
-            errCount_var = 'nErrCount[i]'
-            filebodystr += getModuleFdStr(mod_inst, errCount_var, modinst_var)
-            filebodystr += '\t\tif(nErrCount[i])\n'
+            errCount_var = 'nErrCount_default[i]'
+            errCount_write_var = 'nErrCount_wirte[i]'
+            str1, str2 = getModuleFdStr(mod_inst, errCount_var,errCount_write_var, modinst_var)
+            filebodystr += str1
+            filebodystr += '\t\tif(nErrCount_default[i])\n'
             filebodystr += '\t\t{\n'
-            filebodystr += f'\t\t\tError("Inst_%u def-Vals have [%u] fds NOT Same!\\n", i, nErrCount[i]);\n'
-            filebodystr += '\t\t\tnTotalErr += nErrCount[i];\n'
+            filebodystr += f'\t\t\tError("Inst_%u def-Vals have [%u] fds NOT Same!\\n", i, nErrCount_default[i]);\n'
+            filebodystr += '\t\t\tnTotalErr += nErrCount_default[i];\n'
             filebodystr += '\t\t}\n'
             filebodystr += f'\t\telse\n\t\t\tNotice("Inst_%u def-Vals are OK!\\n", i);\n'
+            filebodystr += '#endif // CHECK_MODULE_FIELD_DEFAULT_VALUE\n\n'
+
+            filebodystr += str2
+            filebodystr += '\t\tif(nErrCount_wirte[i])\n'
+            filebodystr += '\t\t{\n'
+            filebodystr += f'\t\t\tError("Inst_%u write-Vals have [%u] fds NOT Same!\\n", i, nErrCount_wirte[i]);\n'
+            filebodystr += '\t\t\tnTotalErr += nErrCount_wirte[i];\n'
+            filebodystr += '\t\t}\n'
+            filebodystr += f'\t\telse\n\t\t\tNotice("Inst_%u write-Vals are OK!\\n", i);\n'
+            filebodystr += '#endif // CHECK_MODULE_FIELD_DEFAULT_VALUE\n\n'
             filebodystr += '\t}\n'
         elif mod_count == 1:
-            filebodystr += f'\tunsigned int nTotalErr = 0;\n'
             filebodystr += f'\tst_module_info_{modName} * module_inst = {mod_inst_name}_0 ;\n'
+            filebodystr += '#ifdef CHECK_MODULE_FIELD_DEFAULT_VALUE\n'
+            filebodystr += f'\tunsigned int nErrCount_default = 0;\n'
+            filebodystr += '#endif // CHECK_MODULE_FIELD_DEFAULT_VALUE\n\n'
+
+            filebodystr += '#ifdef CHECK_MOUDLE_FIELD_WRITE_VALUE\n'
+            filebodystr += f'\tunsigned int nErrCount_wirte = 0;\n'
+            filebodystr += '#endif // CHECK_MOUDLE_FIELD_WRITE_VALUE\n\n'
+
+
+
             modinst_var = 'module_inst'
-            errCount_var = 'nTotalErr'
-            filebodystr += getModuleFdStr(mod_inst,
-                                          errCount_var, modinst_var, False)
+            errCount_var = 'nErrCount_default'
+            errCount_write_var = 'nErrCount_wirte'
+            # filebodystr += getModuleFdStr(mod_inst,
+            #                               errCount_var, modinst_var, False)
+            str1, str2 = getModuleFdStr(
+                mod_inst, errCount_var,errCount_write_var, modinst_var, False)
+
+            filebodystr += str1
+
+            filebodystr += '\t\tif(nErrCount_default)\n'
+            filebodystr += '\t\t{\n'
+            filebodystr += f'\t\t\tError("Inst_%u def-Vals have [%u] fds NOT Same!\\n", i, nErrCount_default);\n'
+            filebodystr += '\t\t\tnTotalErr += nErrCount_default;\n'
+            filebodystr += '\t\t}\n'
+            filebodystr += f'\t\telse\n\t\t\tNotice("Inst_%u def-Vals are OK!\\n", i);\n'
+            filebodystr += '#endif // CHECK_MODULE_FIELD_DEFAULT_VALUE\n\n'
+
+            filebodystr += str2
+            filebodystr += '\t\tif(nErrCount_wirte)\n'
+            filebodystr += '\t\t{\n'
+            filebodystr += f'\t\t\tError("Inst_%u write-Vals have [%u] fds NOT Same!\\n", i, nErrCount_wirte);\n'
+            filebodystr += '\t\t\tnTotalErr += nErrCount_wirte;\n'
+            filebodystr += '\t\t}\n'
+            filebodystr += f'\t\telse\n\t\t\tNotice("Inst_%u write-Vals are OK!\\n", i);\n'
+            filebodystr += '#endif // CHECK_MODULE_FIELD_DEFAULT_VALUE\n\n'
 
         # i = 0
         # for module_inst in module_inst_list:
@@ -1037,10 +1104,9 @@ int main()
         # filebodystr +='\t\t}\n'
         # filebodystr += f'\t\telse\n\t\t\tInfo("{mod_inst_name}_%u default values are All Same!\\n",i);\n'
         # filebodystr +='\t}\n'
-
-        filebodystr += f'\n\tif(nTotalErr)\n'
-        filebodystr += f'\t\tFail("{modName} have [%u] def-Vals are NOT Same!\\n", nTotalErr);\n'
-        filebodystr += f'\telse\n\t\tPass("{modName} def-Vals OK!\\n");\n'
+        filebodystr += f'\tif(nTotalErr == 0)\n'
+        filebodystr += f'\t\tPass("{modName} Vals OK!\\n");\n'
+        filebodystr += f'\telse\n\t\tFail("{modName} Vals Not OK!\\n");\n'
         filebodystr += '\n\treturn 0;\n}\n'
         out_file.write(fileHeader)
         out_file.write(filebodystr)
@@ -1049,8 +1115,9 @@ int main()
         return out_C_file_Name
 
 
-def getModuleFdStr(mod_inst, errCount_var, modinst_var, bForLoop=True):
+def getModuleFdStr(mod_inst, errCount_var,errCount_Write_var, modinst_var, bForLoop=True):
     filebodystr = ''
+    fieldWriteCheckstr = '#ifdef CHECK_MOUDLE_FIELD_WRITE_VALUE\n'
     group_dim = 0
     str_Tab = ''
     if bForLoop:
@@ -1061,11 +1128,13 @@ def getModuleFdStr(mod_inst, errCount_var, modinst_var, bForLoop=True):
             continue
         if reg.bGroup_start and reg.group_dim:
             group_dim = reg.group_dim
+
         if reg.group_index >= 0 and reg.group_name:
             for g_i in range(0, group_dim):
                 for fd in reg.field_list:
                     if fd.field_name.startswith('reserved'):
                         continue
+
                     reg_fd_var = f'{reg.reg_name}.fd_{fd.field_name}'
                     group_name = reg.group_name[8:]
                     fd_var = f'gp{group_name}[{g_i}].{reg_fd_var}'
@@ -1073,6 +1142,64 @@ def getModuleFdStr(mod_inst, errCount_var, modinst_var, bForLoop=True):
                     filebodystr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
                     filebodystr += f'{str_Tab}\tif(nRegFdVal != {fd.defaultValue})\n{str_Tab}'
                     filebodystr += '\t{\n'
+
+                    nBitWid = fd.end_bit-fd.start_bit+1
+                    enum_val_lst = []
+                    if fd.field_enumstr:
+                        # print(fd.field_enumstr)
+                        enum_lst = fd.field_enumstr.splitlines()
+                        for em in enum_lst:
+                            # print(em)
+                            em_val = em.replace(',', '')
+                            em_val = em_val.strip()
+                            (em_item_name, str, em_item_value) = em_val.partition('=')
+                            # em_item_name = em_item_name.strip()
+                            em_item_value = em_item_value.strip().upper()
+                            if em_item_value:
+                                if em_item_value.startswith('0X'):
+                                    em_item_value_int = int(em_item_value, 16)
+                                else:
+                                    em_item_value_int = int(em_item_value)
+                                enum_val_lst.append(em_item_value_int)
+                    # 先赋值为全1
+                    if fd.attribute.find('W') != -1:
+                        if len(enum_val_lst) > 1:
+                            strfdMask = enum_val_lst[-1]
+                            fieldWriteCheckstr += f'{str_Tab}\t{module_fd_var} = {strfdMask};\n'
+                            fieldWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
+                            fieldWriteCheckstr += f'{str_Tab}\tif({module_fd_var} == {strfdMask})\n{str_Tab}'
+                            fieldWriteCheckstr += '\t{\n'
+                            fieldWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] NOt as Write [{strfdMask}]! \\n", i, nRegFdVal);\n'
+                            fieldWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
+                            fieldWriteCheckstr += '\t}\n'
+
+                            strfdMask = enum_val_lst[0]
+                            fieldWriteCheckstr += f'{str_Tab}\t{module_fd_var} = {strfdMask};\n'
+                            fieldWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
+                            fieldWriteCheckstr += f'{str_Tab}\tif({module_fd_var} == {strfdMask})\n{str_Tab}'
+                            fieldWriteCheckstr += '\t{\n'
+                            fieldWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] NOt as Write [{strfdMask}]! \\n", i, nRegFdVal);\n'
+                            fieldWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
+                            fieldWriteCheckstr += '\t}\n'
+                        else:
+                            strfdMask = f'{bitWidMask_arr[nBitWid-1]}'
+                            fieldWriteCheckstr += f'{str_Tab}\t{module_fd_var} = {strfdMask};\n'
+                            fieldWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
+                            fieldWriteCheckstr += f'{str_Tab}\tif({module_fd_var} == {strfdMask})\n{str_Tab}'
+                            fieldWriteCheckstr += '\t{\n'
+                            fieldWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] NOt same as Write [{strfdMask}]! \\n", i, nRegFdVal);\n'
+                            fieldWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
+                            fieldWriteCheckstr += '\t}\n'
+
+                            strfdMask = 0
+                            fieldWriteCheckstr += f'{str_Tab}\t{module_fd_var} = {strfdMask};\n'
+                            fieldWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
+                            fieldWriteCheckstr += f'{str_Tab}\tif({module_fd_var} == {strfdMask})\n{str_Tab}'
+                            fieldWriteCheckstr += '\t{\n'
+                            fieldWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] NOt same as Write [0]! \\n", i, nRegFdVal);\n'
+                            fieldWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
+                            fieldWriteCheckstr += '\t}\n'
+
                     if bForLoop:
                         filebodystr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] is NOt same! \\n", i, nRegFdVal);\n'
                     else:
@@ -1092,6 +1219,65 @@ def getModuleFdStr(mod_inst, errCount_var, modinst_var, bForLoop=True):
                 filebodystr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
                 filebodystr += f'{str_Tab}\tif(nRegFdVal != {fd.defaultValue})\n{str_Tab}'
                 filebodystr += '\t{\n'
+
+                nBitWid = fd.end_bit-fd.start_bit+1
+                enum_val_lst = []
+                if fd.field_enumstr:
+                    # print(fd.field_enumstr)
+                    enum_lst = fd.field_enumstr.splitlines()
+                    for em in enum_lst:
+                        # print(em)
+                        em_val = em.replace(',', '')
+                        em_val = em_val.strip()
+                        (em_item_name, str, em_item_value) = em_val.partition('=')
+                        # em_item_name = em_item_name.strip()
+                        em_item_value = em_item_value.strip().upper()
+                        if em_item_value:
+                            if em_item_value.startswith('0X'):
+                                em_item_value_int = int(em_item_value, 16)
+                            else:
+                                em_item_value_int = int(em_item_value)
+                            enum_val_lst.append(em_item_value_int)
+
+                if fd.attribute.find('W') != -1:
+                    if len(enum_val_lst) > 1:
+                        strfdMask = enum_val_lst[-1]
+                        fieldWriteCheckstr += f'{str_Tab}\t{module_fd_var} = {strfdMask};\n'
+                        fieldWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
+                        fieldWriteCheckstr += f'{str_Tab}\tif({module_fd_var} == {strfdMask})\n{str_Tab}'
+                        fieldWriteCheckstr += '\t{\n'
+                        fieldWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] NOt same as Write [{strfdMask}]! \\n", i, nRegFdVal);\n'
+                        fieldWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
+                        fieldWriteCheckstr += '\t}\n'
+
+                        strfdMask = enum_val_lst[0]
+                        fieldWriteCheckstr += f'{str_Tab}\t{module_fd_var} = {strfdMask};\n'
+                        fieldWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
+                        fieldWriteCheckstr += f'{str_Tab}\tif({module_fd_var} == {strfdMask})\n{str_Tab}'
+                        fieldWriteCheckstr += '\t{\n'
+                        fieldWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] NOt same as Write [{strfdMask}]! \\n", i, nRegFdVal);\n'
+                        fieldWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
+                        fieldWriteCheckstr += '\t}\n'
+                    else:
+                        strfdMask = f'{bitWidMask_arr[nBitWid-1]}'
+                        fieldWriteCheckstr += f'{str_Tab}\t{module_fd_var} = {strfdMask};\n'
+                        fieldWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
+                        fieldWriteCheckstr += f'{str_Tab}\tif({module_fd_var} == {strfdMask})\n{str_Tab}'
+                        fieldWriteCheckstr += '\t{\n'
+                        fieldWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] NOt same as Write [{strfdMask}]! \\n", i, nRegFdVal);\n'
+                        fieldWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
+                        fieldWriteCheckstr += '\t}\n'
+
+                        strfdMask = 0
+                        fieldWriteCheckstr += f'{str_Tab}\t{module_fd_var} = {strfdMask};\n'
+                        fieldWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
+                        fieldWriteCheckstr += f'{str_Tab}\tif({module_fd_var} == {strfdMask})\n{str_Tab}'
+                        fieldWriteCheckstr += '\t{\n'
+                        fieldWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] NOt same as Write [0]! \\n", i, nRegFdVal);\n'
+                        fieldWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
+                        fieldWriteCheckstr += '\t}\n'
+
+
                 if bForLoop:
                     filebodystr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] is not same! \\n", i, nRegFdVal);\n'
                 else:
@@ -1104,7 +1290,9 @@ def getModuleFdStr(mod_inst, errCount_var, modinst_var, bForLoop=True):
                     filebodystr += f'{str_Tab}\telse\n{str_Tab}\t\tInfo("{fd_var} Value is OK. \\n");\n'
         if reg.bGroup_stop:
             group_dim = 0
-    return filebodystr
+
+    # fieldWriteCheckstr += '#endif //CHECK_MOUDLE_FIELD_WRITE_VALUE\n'
+    return filebodystr, fieldWriteCheckstr
 
 
 def dealwith_excel(xls_file):
@@ -1119,14 +1307,15 @@ def dealwith_excel(xls_file):
             modName = module_inst.module_name
             print('module name: {0}.'.format(modName))
 
-            out_file_list=[]
-            out_file_name=output_C_moduleFile(st_module_list, module_inst, modName)
-            if(out_file_name):
-                out_file_list.append(out_file_name)
+            out_file_list = []
+            # out_file_name = output_C_moduleFile(
+            #     st_module_list, module_inst, modName)
+            # if (out_file_name):
+            #     out_file_list.append(out_file_name)
 
-            out_file_name=output_SV_moduleFile(module_inst, modName)
-            if(out_file_name):
-                out_file_list.append(out_file_name)
+            # out_file_name = output_SV_moduleFile(module_inst, modName)
+            # if (out_file_name):
+            #     out_file_list.append(out_file_name)
 
             ahb_pos = 1
             for index in range(mod_inst_count):
@@ -1134,17 +1323,14 @@ def dealwith_excel(xls_file):
                     ahb_pos = index
                     break
             # print(ahb_pos)
-            out_file_name=outModuleFieldDefaultValueCheckCSrc(
+            out_file_name = outModuleFieldDefaultValueCheckCSrc(
                 st_module_list[0:ahb_pos], modName)
-            if(out_file_name):
+            if (out_file_name):
                 out_file_list.append(out_file_name)
 
-            out_file_name=output_ralf_moduleFile(module_inst, modName)
-
-            if(out_file_name):
-                out_file_list.append(out_file_name)
-
-            
+            # out_file_name = output_ralf_moduleFile(module_inst, modName)
+            # if (out_file_name):
+            #     out_file_list.append(out_file_name)
 
             # outModuleFieldDefaultValueCheckCSrc(st_module_list[0:1], modName)
 
