@@ -181,7 +181,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
         bExcelBasePass = False
     elif isinstance(modName, str):
         if isUnallowedVarName(modName):
-            print("ModuleName only can include letter,number,and - in middle.")
+            print("ModuleName only can include letter,number,and _ in middle.")
             markCell_InvalidFunc(ws, 'B1')
             bExcelBasePass = False
     if baseAddr0 is None and baseAddr1 is None:
@@ -258,7 +258,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                     bRegCheckPass = False
                 elif isUnallowedVarName(regName):
                     print(
-                        f'A{i} '+f'regName \"{regName}\" only can include letter,number,and - in middle.')
+                        f'A{i} '+f'regName \"{regName}\" only can include letter,number,and _ in middle.')
                     markCell_InvalidFunc(ws, f'A{i}')
                     bRegCheckPass = False
                 else:
@@ -1277,14 +1277,14 @@ def dealwith_excel(xls_file):
             print('module name: {0}.'.format(modName))
 
             out_file_list = []
-            # out_file_name = output_C_moduleFile(
-            #     st_module_list, module_inst, modName)
-            # if (out_file_name):
-            #     out_file_list.append(out_file_name)
+            out_file_name = output_C_moduleFile(
+                st_module_list, module_inst, modName)
+            if (out_file_name):
+                out_file_list.append(out_file_name)
 
-            # out_file_name = output_SV_moduleFile(module_inst, modName)
-            # if (out_file_name):
-            #     out_file_list.append(out_file_name)
+            out_file_name = output_SV_moduleFile(module_inst, modName)
+            if (out_file_name):
+                out_file_list.append(out_file_name)
 
             ahb_pos = 1
             for index in range(mod_inst_count):
@@ -1297,9 +1297,9 @@ def dealwith_excel(xls_file):
             if (out_file_name):
                 out_file_list.append(out_file_name)
 
-            # out_file_name = output_ralf_moduleFile(module_inst, modName)
-            # if (out_file_name):
-            #     out_file_list.append(out_file_name)
+            out_file_name = output_ralf_moduleFile(module_inst, modName)
+            if (out_file_name):
+                out_file_list.append(out_file_name)
 
             # outModuleFieldDefaultValueCheckCSrc(st_module_list[0:1], modName)
 
