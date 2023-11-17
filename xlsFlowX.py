@@ -168,10 +168,11 @@ def checkModuleSheetVale(ws):  # 传入worksheet
     print("Start Check Sheet Values.")
     modName = ws['B1'].value
     baseAddr0 = ws['D1'].value
-    baseAddr1 = ws['F2'].value
+    baseAddr1 = ws['D2'].value
     data_width = ws['B2'].value
-    addr_with = ws['D2'].value
-    hdl_path = ws['F1'].value
+    # addr_with = ws['D2'].value
+    ahb_hdl_path = ws['F1'].value
+    axi_hdl_path = ws['F2'].value
     bCheckPass = True
     bExcelBasePass = True
     st_module_list = []
@@ -194,10 +195,10 @@ def checkModuleSheetVale(ws):  # 传入worksheet
         print("daa_width must be filled.")
         markCell_InvalidFunc(ws, 'B2')
         bExcelBasePass = False
-    if addr_with is None:
-        print("addr_witdh must be filled.")
-        markCell_InvalidFunc(ws, 'D2')
-        bExcelBasePass = False
+    # if addr_with is None:
+    #     print("addr_witdh must be filled.")
+    #     markCell_InvalidFunc(ws, 'D2')
+    #     bExcelBasePass = False
 
     if bExcelBasePass:
         if baseAddr0 is not None:
