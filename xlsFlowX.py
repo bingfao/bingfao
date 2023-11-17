@@ -31,7 +31,7 @@ bitWidMask_arr = ('0x01', '0x03', '0x07', '0x0F', '0x1F', '0x3F', '0x7F', '0xFF'
 fieldRWOp_arr = ('rw', 'ro', 'wo', 'w1', 'w1c', 'rc', 'rs', 'wrc', 'wrs', 'wc', 'ws', 'wsrc', 'wcrs', 'w1s', 'w1t', 'w0c',
                  'w0s', 'w0t', 'w1src', 'w1crs', 'w0src', 'w0crs', 'woc', 'wos', 'wo1')
 
-# RW, RO, WO, W1, W1C, RC, RS, WRC, WRS, WC, WS, WSRC, WCRS, W1S, W1T, W0C, 
+# RW, RO, WO, W1, W1C, RC, RS, WRC, WRS, WC, WS, WSRC, WCRS, W1S, W1T, W0C,
 #                  W0S, W0T, W1SRC, W1CRS, W0SRC, W0CRS, W0C, W0S, WO1
 
 # uint_type_arr = ('uint8_t', 'uint16_t', 'uint32_t', 'uint64_t')
@@ -986,15 +986,14 @@ int main()
             filebodystr += f'\tunsigned int nErrCount_wirte[{mod_count}] = '+'{0};\n'
             filebodystr += '#endif // CHECK_MOUDLE_FIELD_WRITE_VALUE\n\n'
 
-
-           
             filebodystr += f'\tfor(int i = 0; i < {mod_count}; ++i)\n'
             filebodystr += '\t{\n'
             filebodystr += '#ifdef CHECK_MODULE_FIELD_DEFAULT_VALUE\n'
             modinst_var = 'module_inst[i]'
             errCount_var = 'nErrCount_default[i]'
             errCount_write_var = 'nErrCount_wirte[i]'
-            str1, str2 = getModuleFdStr(mod_inst, errCount_var,errCount_write_var, modinst_var)
+            str1, str2 = getModuleFdStr(
+                mod_inst, errCount_var, errCount_write_var, modinst_var)
             filebodystr += str1
             filebodystr += '\t\tif(nErrCount_default[i])\n'
             filebodystr += '\t\t{\n'
@@ -1023,15 +1022,13 @@ int main()
             filebodystr += f'\tunsigned int nErrCount_wirte = 0;\n'
             filebodystr += '#endif // CHECK_MOUDLE_FIELD_WRITE_VALUE\n\n'
 
-
-
             modinst_var = 'module_inst'
             errCount_var = 'nErrCount_default'
             errCount_write_var = 'nErrCount_wirte'
             # filebodystr += getModuleFdStr(mod_inst,
             #                               errCount_var, modinst_var, False)
             str1, str2 = getModuleFdStr(
-                mod_inst, errCount_var,errCount_write_var, modinst_var, False)
+                mod_inst, errCount_var, errCount_write_var, modinst_var, False)
 
             filebodystr += str1
 
@@ -1115,7 +1112,7 @@ int main()
         return out_C_file_Name
 
 
-def getModuleFdStr(mod_inst, errCount_var,errCount_Write_var, modinst_var, bForLoop=True):
+def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bForLoop=True):
     filebodystr = ''
     fieldWriteCheckstr = '#ifdef CHECK_MOUDLE_FIELD_WRITE_VALUE\n'
     group_dim = 0
@@ -1165,40 +1162,20 @@ def getModuleFdStr(mod_inst, errCount_var,errCount_Write_var, modinst_var, bForL
                     if fd.attribute.find('W') != -1:
                         if len(enum_val_lst) > 1:
                             strfdMask = enum_val_lst[-1]
-                            fieldWriteCheckstr += f'{str_Tab}\t{module_fd_var} = {strfdMask};\n'
-                            fieldWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
-                            fieldWriteCheckstr += f'{str_Tab}\tif({module_fd_var} == {strfdMask})\n{str_Tab}'
-                            fieldWriteCheckstr += '\t{\n'
-                            fieldWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] NOt as Write [{strfdMask}]! \\n", i, nRegFdVal);\n'
-                            fieldWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
-                            fieldWriteCheckstr += '\t}\n'
+                            fieldWriteCheckstr += fieldWriteChk_func(
+                                errCount_Write_var,  str_Tab, fd_var, module_fd_var, strfdMask)
 
                             strfdMask = enum_val_lst[0]
-                            fieldWriteCheckstr += f'{str_Tab}\t{module_fd_var} = {strfdMask};\n'
-                            fieldWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
-                            fieldWriteCheckstr += f'{str_Tab}\tif({module_fd_var} == {strfdMask})\n{str_Tab}'
-                            fieldWriteCheckstr += '\t{\n'
-                            fieldWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] NOt as Write [{strfdMask}]! \\n", i, nRegFdVal);\n'
-                            fieldWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
-                            fieldWriteCheckstr += '\t}\n'
+                            fieldWriteCheckstr++fieldWriteChk_func(
+                                errCount_Write_var,  str_Tab, fd_var, module_fd_var, strfdMask)
                         else:
                             strfdMask = f'{bitWidMask_arr[nBitWid-1]}'
-                            fieldWriteCheckstr += f'{str_Tab}\t{module_fd_var} = {strfdMask};\n'
-                            fieldWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
-                            fieldWriteCheckstr += f'{str_Tab}\tif({module_fd_var} == {strfdMask})\n{str_Tab}'
-                            fieldWriteCheckstr += '\t{\n'
-                            fieldWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] NOt same as Write [{strfdMask}]! \\n", i, nRegFdVal);\n'
-                            fieldWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
-                            fieldWriteCheckstr += '\t}\n'
+                            fieldWriteCheckstr += fieldWriteChk_func(
+                                errCount_Write_var,  str_Tab, fd_var, module_fd_var, strfdMask)
 
                             strfdMask = 0
-                            fieldWriteCheckstr += f'{str_Tab}\t{module_fd_var} = {strfdMask};\n'
-                            fieldWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
-                            fieldWriteCheckstr += f'{str_Tab}\tif({module_fd_var} == {strfdMask})\n{str_Tab}'
-                            fieldWriteCheckstr += '\t{\n'
-                            fieldWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] NOt same as Write [0]! \\n", i, nRegFdVal);\n'
-                            fieldWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
-                            fieldWriteCheckstr += '\t}\n'
+                            fieldWriteCheckstr += fieldWriteChk_func(
+                                errCount_Write_var,  str_Tab, fd_var, module_fd_var, strfdMask)
 
                     if bForLoop:
                         filebodystr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] is NOt same! \\n", i, nRegFdVal);\n'
@@ -1242,41 +1219,21 @@ def getModuleFdStr(mod_inst, errCount_var,errCount_Write_var, modinst_var, bForL
                 if fd.attribute.find('W') != -1:
                     if len(enum_val_lst) > 1:
                         strfdMask = enum_val_lst[-1]
-                        fieldWriteCheckstr += f'{str_Tab}\t{module_fd_var} = {strfdMask};\n'
-                        fieldWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
-                        fieldWriteCheckstr += f'{str_Tab}\tif({module_fd_var} == {strfdMask})\n{str_Tab}'
-                        fieldWriteCheckstr += '\t{\n'
-                        fieldWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] NOt same as Write [{strfdMask}]! \\n", i, nRegFdVal);\n'
-                        fieldWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
-                        fieldWriteCheckstr += '\t}\n'
+                        fieldWriteCheckstr += fieldWriteChk_func(
+                            errCount_Write_var,  str_Tab, fd_var, module_fd_var, strfdMask)
 
                         strfdMask = enum_val_lst[0]
-                        fieldWriteCheckstr += f'{str_Tab}\t{module_fd_var} = {strfdMask};\n'
-                        fieldWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
-                        fieldWriteCheckstr += f'{str_Tab}\tif({module_fd_var} == {strfdMask})\n{str_Tab}'
-                        fieldWriteCheckstr += '\t{\n'
-                        fieldWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] NOt same as Write [{strfdMask}]! \\n", i, nRegFdVal);\n'
-                        fieldWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
-                        fieldWriteCheckstr += '\t}\n'
+                        fieldWriteCheckstr += fieldWriteChk_func(
+                            errCount_Write_var,  str_Tab, fd_var, module_fd_var, strfdMask)
                     else:
                         strfdMask = f'{bitWidMask_arr[nBitWid-1]}'
-                        fieldWriteCheckstr += f'{str_Tab}\t{module_fd_var} = {strfdMask};\n'
-                        fieldWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
-                        fieldWriteCheckstr += f'{str_Tab}\tif({module_fd_var} == {strfdMask})\n{str_Tab}'
-                        fieldWriteCheckstr += '\t{\n'
-                        fieldWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] NOt same as Write [{strfdMask}]! \\n", i, nRegFdVal);\n'
-                        fieldWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
-                        fieldWriteCheckstr += '\t}\n'
+
+                        fieldWriteCheckstr += fieldWriteChk_func(
+                            errCount_Write_var,  str_Tab, fd_var, module_fd_var, strfdMask)
 
                         strfdMask = 0
-                        fieldWriteCheckstr += f'{str_Tab}\t{module_fd_var} = {strfdMask};\n'
-                        fieldWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
-                        fieldWriteCheckstr += f'{str_Tab}\tif({module_fd_var} == {strfdMask})\n{str_Tab}'
-                        fieldWriteCheckstr += '\t{\n'
-                        fieldWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] NOt same as Write [0]! \\n", i, nRegFdVal);\n'
-                        fieldWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
-                        fieldWriteCheckstr += '\t}\n'
-
+                        fieldWriteCheckstr += fieldWriteChk_func(
+                            errCount_Write_var,  str_Tab, fd_var, module_fd_var, strfdMask)
 
                 if bForLoop:
                     filebodystr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] is not same! \\n", i, nRegFdVal);\n'
@@ -1293,6 +1250,18 @@ def getModuleFdStr(mod_inst, errCount_var,errCount_Write_var, modinst_var, bForL
 
     # fieldWriteCheckstr += '#endif //CHECK_MOUDLE_FIELD_WRITE_VALUE\n'
     return filebodystr, fieldWriteCheckstr
+
+
+def fieldWriteChk_func(errCount_Write_var, str_Tab, fd_var, module_fd_var, strfdMask):
+    fdWriteCheckstr=''
+    fdWriteCheckstr += f'{str_Tab}\t{module_fd_var} = {strfdMask};\n'
+    fdWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
+    fdWriteCheckstr += f'{str_Tab}\tif({module_fd_var} != {strfdMask})\n{str_Tab}'
+    fdWriteCheckstr += '\t{\n'
+    fdWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] NOt same as Write [{strfdMask}]! \\n", i, nRegFdVal);\n'
+    fdWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
+    fdWriteCheckstr += '\t}\n'
+    return fdWriteCheckstr
 
 
 def dealwith_excel(xls_file):
