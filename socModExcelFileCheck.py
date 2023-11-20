@@ -1,8 +1,16 @@
-from xlsFlowX import checkModuleSheetVale
+from xlsFlowX import checkModuleSheetVale,output_C_moduleFile,output_ralf_moduleFile,output_SV_moduleFile,outModuleFieldDefaultValueCheckCSrc
 from openpyxl import load_workbook
 import os
 
+
+def HexVal(var):
+    hxstr=hex(var)
+    return hxstr[2:].upper()
+
 if __name__ == '__main__':
+    print(HexVal(245))
+    
+    
     moduleFileList = []
     # 遍历当前文件夹下的xlsx文件，然后处理
     with os.scandir('.') as it:
@@ -19,8 +27,7 @@ if __name__ == '__main__':
                         mod_name = entry_name[0:ri]
                         date_val = entry_name[ri+1:ni]
                         if date_val.isnumeric():
-                            print('name: {0} , date: {1}'.format(
-                                mod_name, date_val))
+                            # print('name: {0} , date: {1}'.format(mod_name, date_val))
                             if mod_name in mod_dict:
                                 if mod_dict[mod_name] < date_val:
                                     mod_dict[mod_name] = date_val
@@ -32,17 +39,134 @@ if __name__ == '__main__':
             mod_file = mod_name+'_'+mod_dict[mod_name]+'.xlsx'
             moduleFileList.append(mod_file)
 
+    bAllChecPass=True
+    soc_module_dict={}
     for mod_file in moduleFileList:
+        print(mod_file)
         wb = load_workbook(mod_file)
         ws = wb.active
-        st_module_list, bCheckPass = checkModuleSheetVale(ws)
+        modName, st_module_list, bCheckPass = checkModuleSheetVale(ws)
         if bCheckPass:
-            print(f'{mod_file} checked Pass.')
+            print(f'{mod_file} checked Pass.')        
+            soc_module_dict[modName]=st_module_list
         else:
             print(f'{mod_file} Check Failed. Please review the excel file and fix it.')
-            filename = os.path.basename(mod_file)
-            out_mark_xlsx_file = filename.replace('.xlsx', '_errMk.xlsx')
-            # print(out_mark_xlsx_file)
-            print("You can review the error mark file {0}.".format(
-                out_mark_xlsx_file))
-            wb.save(out_mark_xlsx_file)
+            bAllChecPass=False
+            # filename = os.path.basename(mod_file)
+            # out_mark_xlsx_file = filename.replace('.xlsx', '_errMk.xlsx')
+            # # print(out_mark_xlsx_file)
+            # print("You can review the error mark file {0}.".format(
+            #     out_mark_xlsx_file))
+            # wb.save(out_mark_xlsx_file)
+
+    # if all check pass 生成相应的文件
+    if bAllChecPass:
+        soc_ralf_body_str=''
+        soc_ralf_AHB_str='\n\tdomain AHB {\n\t\tbytes 4;\n'
+        soc_ralf_AXI_str='\n\tdomain AXI {\n\t\tbytes 4;\n'
+        for modName in soc_module_dict:
+            st_module_list=soc_module_dict[modName]
+            mod_inst_count = len(st_module_list)
+            if mod_inst_count:
+                module_inst = st_module_list[0]
+                # print('module name: {0}.'.format(modName))
+
+                out_file_list = []
+                out_file_name = output_C_moduleFile(
+                    st_module_list, module_inst, modName)
+
+                out_file_name = output_SV_moduleFile(module_inst, modName)
+
+                ahb_pos = 0
+                for index in range(mod_inst_count):
+                    if st_module_list[index].bus_type:
+                        ahb_pos = index
+                        break
+                axi_len=mod_inst_count-ahb_pos
+                modName_U=modName.upper()
+                if ahb_pos>0:
+                    for index in range(ahb_pos):
+                        mod_inst=st_module_list[index]
+                        hal_path=mod_inst.hdl_path
+                        if hal_path and hal_path != 'NULL':
+                            soc_ralf_AHB_str+=f'\t\tblock {modName} = {modName_U}{index} ({mod_inst.hdl_path}) @\'h{HexVal(mod_inst.bus_baseAddr)} ;\n'
+                        else:
+                            soc_ralf_AHB_str+=f'\t\tblock {modName} = {modName_U}{index} @\'h{HexVal(mod_inst.bus_baseAddr)} ;\n'
+                    # if ahb_pos>1:
+                    #     ahb_baseAddr_lst=[]
+                    #     for index in range(ahb_pos):
+                    #         ahb_baseAddr_lst.append(st_module_list[index].bus_baseAddr)
+                    #     ahb_baseAddr_lst.sort()
+                    #     bEqualDist=False
+                    #     ahb_inst_len=len(ahb_baseAddr_lst)
+                    #     if ahb_inst_len>2:
+                    #         bEqualDist= (ahb_baseAddr_lst[-1]-ahb_baseAddr_lst[-2] == ahb_baseAddr_lst[1]-ahb_baseAddr_lst[0]) 
+                    #     elif ahb_inst_len ==2:
+                    #         bEqualDist=True
+                    #     if bEqualDist:
+                    #         nDist=ahb_baseAddr_lst[1]-ahb_baseAddr_lst[0]
+                    #         soc_ralf_AHB_str+=f'\t\tblock {modName}[{ahb_inst_len}] @\'h{HexVal(ahb_baseAddr_lst[0])}+\'h{HexVal(nDist)} ;\n'
+                    #     else:
+                    #         for index in range(ahb_pos):
+                    #             soc_ralf_AHB_str+=f'\t\tblock {modName}{index} @\'h{HexVal(st_module_list[index].bus_baseAddr)} ;\n'
+                    # elif ahb_pos==1:
+                    #     soc_ralf_AHB_str+=f'\t\tblock {modName} @\'h{HexVal(module_inst.bus_baseAddr)} ;\n'
+                
+                if axi_len>0:
+                    for index in range(ahb_pos,mod_inst_count):
+                        mod_inst=st_module_list[index]
+                        hal_path=mod_inst.hdl_path
+                        if hal_path and hal_path != 'NULL':
+                            soc_ralf_AHB_str+=f'\t\tblock {modName} = {modName_U}{index} ({mod_inst.hdl_path}) @\'h{HexVal(mod_inst.bus_baseAddr)} ;\n'
+                        else:
+                            soc_ralf_AXI_str+=f'\t\tblock {modName} = {modName_U}{index} @\'h{HexVal(mod_inst.bus_baseAddr)} ;\n'
+                    # module_inst_axi = st_module_list[-1]
+                    # if axi_len ==1:
+                    #     soc_ralf_AXI_str+=f'\t\tblock {modName} @\'h{HexVal(module_inst_axi.bus_baseAddr)} ;\n'
+                    # elif axi_len>1:
+                    #     axi_baseAddr_lst=[]
+                    #     for index in range(ahb_pos,mod_inst_count):
+                    #         axi_baseAddr_lst.append(st_module_list[index].bus_baseAddr)
+                    #     axi_baseAddr_lst.sort()
+                    #     bEqualDist=False
+                    #     axi_inst_len=len(axi_baseAddr_lst)
+                    #     if axi_inst_len>2:
+                    #         bEqualDist= (axi_baseAddr_lst[-1]-axi_baseAddr_lst[-2] == axi_baseAddr_lst[1]-axi_baseAddr_lst[0]) 
+                    #     elif axi_inst_len==2:
+                    #         bEqualDist=True
+                    #     if bEqualDist:
+                    #         nDist=axi_baseAddr_lst[1]-axi_baseAddr_lst[0]
+                    #         soc_ralf_AXI_str+=f'\t\tblock {modName}[{axi_inst_len}] @\'h{HexVal(axi_baseAddr_lst[0])}+\'h{HexVal(nDist)} ;\n'
+                    #     else:
+                    #         for index in range(ahb_pos,mod_inst_count):
+                    #             soc_ralf_AXI_str+=f'\t\tblock {modName}{index} @\'h{HexVal(st_module_list[index].bus_baseAddr)} ;\n'
+                    
+
+                out_file_name = outModuleFieldDefaultValueCheckCSrc(
+                    st_module_list[0:ahb_pos], modName)
+
+                out_file_name = output_ralf_moduleFile(module_inst, modName)
+                soc_ralf_body_str+=f'source {out_file_name}\n'
+
+
+                # outModuleFieldDefaultValueCheckCSrc(st_module_list[0:1], modName)
+
+                # for module in st_module_list:
+                #     print(module.module_info_str())
+                # 实例化各个module
+        soc_ralf_AHB_str+='\t}\n'
+        soc_ralf_AXI_str+='\t}\n'
+        soc_ralf_body_str+='system soc {\n'
+        out_soc_file_Name = './soc.ralf'
+        with open(out_soc_file_Name, 'w+') as out_file:
+            out_file.write(soc_ralf_body_str)
+            out_file.write(soc_ralf_AHB_str)
+            out_file.write(soc_ralf_AXI_str)
+
+            out_file.write('}\n')
+            out_file.close()
+        
+
+        
+        
+

@@ -204,20 +204,42 @@ def checkModuleSheetVale(ws):  # 传入worksheet
         if baseAddr0 is not None:
             # print(baseAddr0)
             ahb_addr_lst = baseAddr0.splitlines()
+            ahb_hdl_path_lst = []
+            if ahb_hdl_path and ahb_hdl_path != 'NULL':
+                ahb_hdl_path_lst = ahb_hdl_path.splitlines()
+                if len(ahb_hdl_path_lst) != len(ahb_addr_lst):
+                    print("hdl_path must be same size as addr.")
+                    markCell_InvalidFunc(ws, 'F1')
+                    bExcelBasePass = False
+            i = 0
             for ahb in ahb_addr_lst:
                 ahb_module = St_Module_info(modName)
                 ahb_module.bus_baseAddr = int(ahb, 16)
                 ahb_module.data_width = data_width
+                if len(ahb_hdl_path_lst) > i:
+                    ahb_module.hdl_path = ahb_hdl_path_lst[i]
                 st_module_list.append(ahb_module)
+                i += 1
         if baseAddr1 is not None:
             # print(baseAddr1)
             axi_addr_lst = baseAddr1.splitlines()
+            axi_hdl_path_lst = []
+            if axi_hdl_path and axi_hdl_path != 'NULL':
+                axi_hdl_path_lst = axi_hdl_path.splitlines()
+                if len(axi_addr_lst) != len(axi_hdl_path_lst):
+                    print("hdl_path must be same size as addr.")
+                    markCell_InvalidFunc(ws, 'F2')
+                    bExcelBasePass = False
+            i = 0
             for axi in axi_addr_lst:
                 axi_module = St_Module_info(modName)
                 axi_module.bus_baseAddr = int(axi, 16)
                 axi_module.bus_type = 1
                 axi_module.data_width = data_width
+                if len(axi_hdl_path_lst) > i:
+                    axi_module.hdl_path = axi_hdl_path_lst[i]
                 st_module_list.append(axi_module)
+                i += 1
     else:
         bCheckPass = False
 
@@ -371,7 +393,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                 field_name = field_name.strip()
                 if isUnallowedVarName(field_name):
                     print(
-                        f'J{i} '+f'field_name \"{field_name}\"only can include letter,number,and - in middle.')
+                        f'J{i} '+f'field_name \"{field_name}\"only can include letter,number,and _ in middle.')
                     markCell_InvalidFunc(ws, f'J{i}')
                     bFiled_info_Pass = False
             if endBit is None:
@@ -449,7 +471,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
 
     if bCheckPass:
         print("Check Sheet:  result Pass")
-    return st_module_list, bCheckPass
+    return modName, st_module_list, bCheckPass
 
 
 def output_SV_moduleFile(module_inst, modName):
@@ -1254,7 +1276,7 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
 
 
 def fieldWriteChk_func(errCount_Write_var, str_Tab, fd_var, module_fd_var, strfdMask):
-    fdWriteCheckstr=''
+    fdWriteCheckstr = ''
     fdWriteCheckstr += f'{str_Tab}\t{module_fd_var} = {strfdMask};\n'
     fdWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
     fdWriteCheckstr += f'{str_Tab}\tif({module_fd_var} != {strfdMask})\n{str_Tab}'
@@ -1269,12 +1291,11 @@ def dealwith_excel(xls_file):
     # "UART_final_202301010.xls"
     wb = load_workbook(xls_file)
     ws = wb.active
-    st_module_list, bCheckPass = checkModuleSheetVale(ws)
+    modName, st_module_list, bCheckPass = checkModuleSheetVale(ws)
     if bCheckPass:
         mod_inst_count = len(st_module_list)
         if mod_inst_count:
             module_inst = st_module_list[0]
-            modName = module_inst.module_name
             print('module name: {0}.'.format(modName))
 
             out_file_list = []
@@ -1287,7 +1308,7 @@ def dealwith_excel(xls_file):
             if (out_file_name):
                 out_file_list.append(out_file_name)
 
-            ahb_pos = 1
+            ahb_pos = 0
             for index in range(mod_inst_count):
                 if st_module_list[index].bus_type:
                     ahb_pos = index
