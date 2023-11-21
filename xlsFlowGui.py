@@ -3,7 +3,7 @@ import sys
 import os
 from xlsFlowX import dealwith_excel
 
-import paramiko
+import  paramiko
 
 
 def sftp_upload_file(host, port, user, password, out_file_list, timeout=10):
@@ -43,7 +43,7 @@ def sftp_upload_file(host, port, user, password, out_file_list, timeout=10):
 if __name__ == '__main__':
     layout = [[sg.Text('请选择模块excel文件.')],
               [sg.In(key='-fileName-'), sg.FileBrowse(
-                  file_types=(("excel files", "*.xlsx"),))], [sg.Button('DoXlsXFlow')],  [sg.Text('SvrIp:', s=8), sg.In(key='-svrIp-', s=15, default_text='127.0.0.1'), sg.Text('SvrPort:', s=8), sg.In(key='-svrPort-', s=15, default_text='22')], [sg.Text('username:', s=8), sg.In(key='-username-', s=15), sg.Text('password:', s=8), sg.In(key='-usrpsw-', s=15, password_char='*')], [sg.Button('Upload')], [sg.CloseButton('Exit')]]
+                  file_types=(("excel files", "*.xlsx"),))], [sg.Button('DoXlsXFlow')],  [sg.Text('SvrIp:', s=8), sg.In(key='-svrIp-', s=15, default_text='172.31.40.44'), sg.Text('SvrPort:', s=8), sg.In(key='-svrPort-', s=15, default_text='22')], [sg.Text('username:', s=8), sg.In(key='-username-', s=15,default_text='bgao'), sg.Text('password:', s=8), sg.In(key='-usrpsw-', s=15, password_char='*')], [sg.Button('Upload')], [sg.CloseButton('Exit')]]
     window = sg.Window('CIP Excel to DV', layout)
     out_file_list = []
     while True:
