@@ -27,11 +27,12 @@ def sftp_upload_file(host, port, user, password, out_file_list, timeout=10):
         for out_f in out_file_list:
             out_file_name = os.path.abspath(out_f)
             svr_file_path = os.path.normpath(out_f)
-            print(svr_file_path)
+            # print(svr_file_path)
             svr_file_path = svr_file_path.replace('\\', '__')
-            print(svr_file_path)
+            svr_file_= './data/'+svr_file_path
+            print(svr_file_)
             # print(out_file_name)
-            sftp.put(out_file_name, svr_file_path)
+            sftp.put(out_file_name, svr_file_)
         t.close()
         return True
     except Exception as e:

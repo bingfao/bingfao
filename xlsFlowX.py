@@ -1154,16 +1154,28 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                 for fd in reg.field_list:
                     if fd.field_name.startswith('reserved'):
                         continue
-
+            
                     reg_fd_var = f'{reg.reg_name}.fd_{fd.field_name}'
                     group_name = reg.group_name[8:]
                     fd_var = f'gp{group_name}[{g_i}].{reg_fd_var}'
                     module_fd_var = f'{str_Tab}{modinst_var}->{reg.group_name}[{g_i}].st_reg_{reg_fd_var}'
-                    filebodystr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
-                    filebodystr += f'{str_Tab}\tif(nRegFdVal != {fd.defaultValue})\n{str_Tab}'
-                    filebodystr += '\t{\n'
-
                     nBitWid = fd.end_bit-fd.start_bit+1
+                    if fd.attribute.find('R') != -1:
+                        filebodystr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
+                        filebodystr += f'{str_Tab}\tif(nRegFdVal != {fd.defaultValue})\n{str_Tab}'
+                        filebodystr += '\t{\n'
+                    
+                        if bForLoop:
+                            filebodystr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] is NOt same! \\n", i, nRegFdVal);\n'
+                        else:
+                            filebodystr += f'{str_Tab}\t\tError("{fd_var}  [0x%X] is NOt same! \\n", nRegFdVal);\n'
+                        filebodystr += f'{str_Tab}\t\t++{errCount_var};\n{str_Tab}'
+                        filebodystr += '\t}\n'
+                        if bForLoop:
+                            filebodystr += f'{str_Tab}\telse\n{str_Tab}\t\tInfo("Inst_%u # {fd_var} Value is OK. \\n", i);\n'
+                        else:
+                            filebodystr += f'{str_Tab}\telse\n{str_Tab}\t\tInfo("{fd_var} Value is OK. \\n");\n'
+
                     enum_val_lst = []
                     if fd.field_enumstr:
                         # print(fd.field_enumstr)
@@ -1199,28 +1211,34 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                             strfdMask = 0
                             fieldWriteCheckstr += fieldWriteChk_func(
                                 errCount_Write_var,  str_Tab, fd_var, module_fd_var, strfdMask)
+                            
+        else:
+            for fd in reg.field_list:
+                if fd.field_name.startswith('reserved'):
+                    continue
+                # 根据attr，判断是否可读
+
+                fd_var = f'{reg.reg_name}.fd_{fd.field_name}'
+                module_fd_var = f'{modinst_var}->st_reg_{fd_var}'
+                nBitWid = fd.end_bit-fd.start_bit+1
+
+                if fd.attribute.find('R') != -1:
+                    filebodystr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
+                    filebodystr += f'{str_Tab}\tif(nRegFdVal != {fd.defaultValue})\n{str_Tab}'
+                    filebodystr += '\t{\n'
 
                     if bForLoop:
-                        filebodystr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] is NOt same! \\n", i, nRegFdVal);\n'
+                        filebodystr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] is not same! \\n", i, nRegFdVal);\n'
                     else:
-                        filebodystr += f'{str_Tab}\t\tError("{fd_var}  [0x%X] is NOt same! \\n", nRegFdVal);\n'
+                        filebodystr += f'{str_Tab}\t\tError("{fd_var}  [0x%X] is not same! \\n", nRegFdVal);\n'
                     filebodystr += f'{str_Tab}\t\t++{errCount_var};\n{str_Tab}'
                     filebodystr += '\t}\n'
                     if bForLoop:
                         filebodystr += f'{str_Tab}\telse\n{str_Tab}\t\tInfo("Inst_%u # {fd_var} Value is OK. \\n", i);\n'
                     else:
                         filebodystr += f'{str_Tab}\telse\n{str_Tab}\t\tInfo("{fd_var} Value is OK. \\n");\n'
-        else:
-            for fd in reg.field_list:
-                if fd.field_name.startswith('reserved'):
-                    continue
-                fd_var = f'{reg.reg_name}.fd_{fd.field_name}'
-                module_fd_var = f'{modinst_var}->st_reg_{fd_var}'
-                filebodystr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
-                filebodystr += f'{str_Tab}\tif(nRegFdVal != {fd.defaultValue})\n{str_Tab}'
-                filebodystr += '\t{\n'
 
-                nBitWid = fd.end_bit-fd.start_bit+1
+                
                 enum_val_lst = []
                 if fd.field_enumstr:
                     # print(fd.field_enumstr)
@@ -1238,6 +1256,7 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                             else:
                                 em_item_value_int = int(em_item_value)
                             enum_val_lst.append(em_item_value_int)
+
 
                 if fd.attribute.find('W') != -1:
                     if len(enum_val_lst) > 1:
@@ -1258,16 +1277,7 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                         fieldWriteCheckstr += fieldWriteChk_func(
                             errCount_Write_var,  str_Tab, fd_var, module_fd_var, strfdMask)
 
-                if bForLoop:
-                    filebodystr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] is not same! \\n", i, nRegFdVal);\n'
-                else:
-                    filebodystr += f'{str_Tab}\t\tError("{fd_var}  [0x%X] is not same! \\n", nRegFdVal);\n'
-                filebodystr += f'{str_Tab}\t\t++{errCount_var};\n{str_Tab}'
-                filebodystr += '\t}\n'
-                if bForLoop:
-                    filebodystr += f'{str_Tab}\telse\n{str_Tab}\t\tInfo("Inst_%u # {fd_var} Value is OK. \\n", i);\n'
-                else:
-                    filebodystr += f'{str_Tab}\telse\n{str_Tab}\t\tInfo("{fd_var} Value is OK. \\n");\n'
+
         if reg.bGroup_stop:
             group_dim = 0
 
