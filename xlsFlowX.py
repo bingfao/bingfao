@@ -47,6 +47,7 @@ class St_Filed_info:
         self.field_comments = ''
         self.field_enumstr = ''
         self.field_constr = ''
+        self.hdl_path=''
         self.bRandom_Enable = False
 
     def field_info_str(self):
@@ -443,14 +444,17 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                 field_inst.end_bit = endBit
                 field_inst.start_bit = startBit
                 default_val = row[13]
-                field_constr = row[14]
+                field_hdl = row[14]
                 field_enum = row[15]
+                field_constr = row[16]
                 if isinstance(default_val, str):
                     field_inst.defaultValue = int(default_val, 16)
                 if isinstance(field_enum, str):
                     field_inst.field_enumstr = field_enum
                 if isinstance(field_constr, str):
                     field_inst.field_constr = field_constr
+
+                field_inst.hdl_path=field_hdl
 
                 random_enable = row[17]
                 comments = row[18]
@@ -873,7 +877,10 @@ def output_ralf_moduleFile(module_inst, modName):
                         # nFieldReservedIndex += 1
                         bReserved = True
                     if not bReserved:
-                        file_body_str += f'{str_Tab}\t\tfield fd_{fd.field_name} @{fd.start_bit}'+' {\n'
+                        if fd.hdl_path:
+                            file_body_str += f'{str_Tab}\t\tfield fd_{fd.field_name} ({fd.hdl_path})  @{fd.start_bit}'+' {\n'
+                        else:
+                            file_body_str += f'{str_Tab}\t\tfield fd_{fd.field_name} @{fd.start_bit}'+' {\n'
                         file_body_str += f'{str_Tab}\t\t\tbits {nBitWid} ;\n'
                         file_body_str += f'{str_Tab}\t\t\treset {fd.defaultValue} ;\n'
                         if fd.attribute:
