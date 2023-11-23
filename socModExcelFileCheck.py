@@ -8,8 +8,7 @@ def HexVal(var):
     return hxstr[2:].upper()
 
 if __name__ == '__main__':
-    print(HexVal(245))
-    
+    # print(HexVal(245))
     
     moduleFileList = []
     # 遍历当前文件夹下的xlsx文件，然后处理

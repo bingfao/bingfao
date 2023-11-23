@@ -47,7 +47,7 @@ class St_Filed_info:
         self.field_comments = ''
         self.field_enumstr = ''
         self.field_constr = ''
-        self.hdl_path=''
+        self.hdl_path = ''
         self.bRandom_Enable = False
 
     def field_info_str(self):
@@ -454,7 +454,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                 if isinstance(field_constr, str):
                     field_inst.field_constr = field_constr
 
-                field_inst.hdl_path=field_hdl
+                field_inst.hdl_path = field_hdl
 
                 random_enable = row[17]
                 comments = row[18]
@@ -610,15 +610,24 @@ typedef struct {
         group_name = ''
         nRegData_size = module_inst.data_width/8
         uint_str = 'uint32_t'
-        match nRegData_size:
-            case 1:
-                uint_str = 'uint8_t'
-            case 2:
-                uint_str = 'uint16_t'
-            case 4:
-                uint_str = 'uint32_t'
-            case 8:
-                uint_str = 'uint64_t'
+        # match nRegData_size:
+        #     case 1:
+        #         uint_str = 'uint8_t'
+        #     case 2:
+        #         uint_str = 'uint16_t'
+        #     case 4:
+        #         uint_str = 'uint32_t'
+        #     case 8:
+        #         uint_str = 'uint64_t'
+        if nRegData_size == 1:
+            uint_str = 'uint8_t'
+        elif nRegData_size == 2:
+            uint_str = 'uint16_t'
+        elif nRegData_size == 4:
+            uint_str = 'uint32_t'
+        elif nRegData_size == 8:
+            uint_str = 'uint64_t'
+
         print('module data_width: {0}'.format(module_inst.data_width))
         group_index = -1
         for reg in module_inst.reg_list:
@@ -1161,7 +1170,7 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                 for fd in reg.field_list:
                     if fd.field_name.startswith('reserved'):
                         continue
-            
+
                     reg_fd_var = f'{reg.reg_name}.fd_{fd.field_name}'
                     group_name = reg.group_name[8:]
                     fd_var = f'gp{group_name}[{g_i}].{reg_fd_var}'
@@ -1171,7 +1180,7 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                         filebodystr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
                         filebodystr += f'{str_Tab}\tif(nRegFdVal != {fd.defaultValue})\n{str_Tab}'
                         filebodystr += '\t{\n'
-                    
+
                         if bForLoop:
                             filebodystr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] is NOt same! \\n", i, nRegFdVal);\n'
                         else:
@@ -1218,7 +1227,7 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                             strfdMask = 0
                             fieldWriteCheckstr += fieldWriteChk_func(
                                 errCount_Write_var,  str_Tab, fd_var, module_fd_var, strfdMask)
-                            
+
         else:
             for fd in reg.field_list:
                 if fd.field_name.startswith('reserved'):
@@ -1245,7 +1254,6 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                     else:
                         filebodystr += f'{str_Tab}\telse\n{str_Tab}\t\tInfo("{fd_var} Value is OK. \\n");\n'
 
-                
                 enum_val_lst = []
                 if fd.field_enumstr:
                     # print(fd.field_enumstr)
@@ -1263,7 +1271,6 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                             else:
                                 em_item_value_int = int(em_item_value)
                             enum_val_lst.append(em_item_value_int)
-
 
                 if fd.attribute.find('W') != -1:
                     if len(enum_val_lst) > 1:
@@ -1283,7 +1290,6 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                         strfdMask = 0
                         fieldWriteCheckstr += fieldWriteChk_func(
                             errCount_Write_var,  str_Tab, fd_var, module_fd_var, strfdMask)
-
 
         if reg.bGroup_stop:
             group_dim = 0
