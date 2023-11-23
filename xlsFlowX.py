@@ -628,7 +628,7 @@ typedef struct {
         elif nRegData_size == 8:
             uint_str = 'uint64_t'
 
-        print('module data_width: {0}'.format(module_inst.data_width))
+        # print('module data_width: {0}'.format(module_inst.data_width))
         group_index = -1
         for reg in module_inst.reg_list:
             if reg.bVirtual:

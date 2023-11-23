@@ -73,8 +73,12 @@ if __name__ == '__main__':
                 out_file_list = []
                 out_file_name = output_C_moduleFile(
                     st_module_list, module_inst, modName)
+                if out_file_name:
+                    out_file_list.append(out_file_name)
 
                 out_file_name = output_SV_moduleFile(module_inst, modName)
+                if out_file_name:
+                    out_file_list.append(out_file_name)
 
                 ahb_pos = 0
                 for index in range(mod_inst_count):
@@ -143,15 +147,20 @@ if __name__ == '__main__':
 
                 out_file_name = outModuleFieldDefaultValueCheckCSrc(
                     st_module_list[0:ahb_pos], modName)
+                if out_file_name:
+                    out_file_list.append(out_file_name)
 
                 out_file_name = output_ralf_moduleFile(module_inst, modName)
+                if out_file_name:
+                    out_file_list.append(out_file_name)
+
                 soc_ralf_body_str+=f'source {out_file_name}\n'
 
 
                 # outModuleFieldDefaultValueCheckCSrc(st_module_list[0:1], modName)
 
-                # for module in st_module_list:
-                #     print(module.module_info_str())
+                for out_file in out_file_list:
+                    print('generate: '+out_file)
                 # 实例化各个module
         soc_ralf_AHB_str+='\t}\n'
         soc_ralf_AXI_str+='\t}\n'
@@ -164,6 +173,7 @@ if __name__ == '__main__':
 
             out_file.write('}\n')
             out_file.close()
+            print('generate: '+out_soc_file_Name)
         
 
         
