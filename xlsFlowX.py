@@ -241,7 +241,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                     axi_module.hdl_path = axi_hdl_path_lst[i]
                 st_module_list.append(axi_module)
                 i += 1
-    else:
+    if bExcelBasePass == False:
         bCheckPass = False
 
     nRows = ws.max_row

@@ -64,6 +64,7 @@ if __name__ == '__main__':
         soc_ralf_AHB_str='\n\tdomain AHB {\n\t\tbytes 4;\n'
         soc_ralf_AXI_str='\n\tdomain AXI {\n\t\tbytes 4;\n'
         for modName in soc_module_dict:
+            print("module: "+modName)
             st_module_list=soc_module_dict[modName]
             mod_inst_count = len(st_module_list)
             if mod_inst_count:
