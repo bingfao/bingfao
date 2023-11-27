@@ -156,8 +156,9 @@ def markCell_InvalidFunc(ws, cellstr, clr='ff0000'):
                     top=double,
                     bottom=double)
     cell = ws[cellstr]
-    cell.border = border
-    cell.font = Font(color="FF0000")
+    if not isinstance(cell,tuple):
+        cell.border = border
+        cell.font = Font(color="FF0000")
 
 
 def isUnallowedVarName(strVal):
@@ -334,7 +335,10 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                             if not (group_dim and group_size):
                                 print(
                                     "Cell[H"+str(i)+"] dim and dim_size must be filled.")
-                                markCell_InvalidFunc(ws, f'E{i}:F{i}')
+                                if not group_dim:
+                                    markCell_InvalidFunc(ws, f'E{i}')
+                                if not group_size:
+                                    markCell_InvalidFunc(ws, f'F{i}')
                                 bRegCheckPass = False
                             reg_info.group_dim = group_dim
                             reg_info.group_size = group_size
