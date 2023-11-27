@@ -156,7 +156,7 @@ def markCell_InvalidFunc(ws, cellstr, clr='ff0000'):
                     top=double,
                     bottom=double)
     cell = ws[cellstr]
-    if not isinstance(cell,tuple):
+    if not isinstance(cell, tuple):
         cell.border = border
         cell.font = Font(color="FF0000")
 
@@ -490,10 +490,15 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                     for em in enum_lst:
                         em_val = em.replace(',', '')
                         em_val = em_val.strip()
-                        (em_item_name, em_str,
-                            em_item_value) = em_val.partition('=')
-                        em_item_name = em_item_name.strip()
-                        em_item_value = em_item_value.strip().upper()
+                        if em_val.find('=') != -1:
+                            (em_item_name, em_str,
+                                em_item_value) = em_val.partition('=')
+                            em_item_name = em_item_name.strip()
+                            em_item_value = em_item_value.strip().upper()
+                        else:
+                            b_enum_err = True
+                        if b_enum_err:
+                            break
                         em_item_int_val = 0
                         if em_item_value.isdecimal():
                             em_item_int_val = int(em_item_value)
@@ -506,15 +511,15 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                             print(
                                 "Field default value must be the first enum value at Row "+str(i))
                             markCell_InvalidFunc(ws, f'N{i}')
-                            bFiled_info_Pass=False
+                            bFiled_info_Pass = False
                         bFirst = False
                     if not b_enum_err:
                         field_inst.field_enumstr = field_enum
                     else:
                         print(
-                            "Field enum val must be dec or hex value at Row "+str(i))
+                            'Field enum val must be "emName =  (dec or hex value) " at Row '+str(i))
                         markCell_InvalidFunc(ws, f'P{i}')
-                        bFiled_info_Pass=False
+                        bFiled_info_Pass = False
                 if isinstance(field_constr, str):
                     field_inst.field_constr = field_constr
 
@@ -539,14 +544,15 @@ def checkModuleSheetVale(ws):  # 传入worksheet
         i += 1
 
     if bCheckPass and st_module_list:
-        mod_inst=st_module_list[0]
-        reg_list =mod_inst.reg_list
+        mod_inst = st_module_list[0]
+        reg_list = mod_inst.reg_list
         for reg in reg_list:
             for fd in reg.field_list:
                 if fd in reg_list:
                     markCell_InvalidFunc(ws, f'J{fd.xls_row}')
-                    print("Field Name NOT Allow same as Reg Name at row "+ str(fd.xls_row))
-                    bCheckPass =False
+                    print(
+                        "Field Name NOT Allow same as Reg Name at row " + str(fd.xls_row))
+                    bCheckPass = False
                     break
     if bCheckPass:
         print("Check Sheet:  result Pass")
