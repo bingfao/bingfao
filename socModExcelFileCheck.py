@@ -162,6 +162,8 @@ if __name__ == '__main__':
 
                 for out_file in out_file_list:
                     print('generate: '+out_file)
+                
+                print("module: "+modName+" Pass.")
                 # 实例化各个module
         soc_ralf_AHB_str+='\t}\n'
         soc_ralf_AXI_str+='\t}\n'
