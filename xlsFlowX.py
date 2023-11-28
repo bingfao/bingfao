@@ -762,8 +762,7 @@ typedef struct {
                         # 需要补齐field
                         if bRegGroup:
                             file_body_str += '\t'
-                        file_body_str += f'\t\t{uint_str} fd_reserved{
-                            nFieldReservedIndex} : {fd.start_bit-field_bitPos} ;\n'
+                        file_body_str += f'\t\t{uint_str} fd_reserved{nFieldReservedIndex} : {fd.start_bit-field_bitPos} ;\n'
                         nFieldReservedIndex += 1
                     bReserved = False
                     field_bitPos = fd.end_bit+1
@@ -781,24 +780,19 @@ typedef struct {
                     if fd.field_comments:
                         fd_comments_str = f'/*{fd.field_comments} */'
                     if field_index != 0 or not bReserved:
-                        file_body_str += f'\t\t{uint_str} fd_{
-                            filed_name} : {nBitWid} ; {fd_comments_str}\n'
+                        file_body_str += f'\t\t{uint_str} fd_{filed_name} : {nBitWid} ; {fd_comments_str}\n'
                     field_index -= 1
                     if not bReserved:
                         field_str_ = f'{reg.reg_name.upper()}_{
                             filed_name.upper()}'
                         field_define_str += f'//define for {field_str_}\n'
-                        field_define_str += f'#define \t {
-                            field_str_}_POS \t      {fd.start_bit}U\n'
+                        field_define_str += f'#define \t {field_str_}_POS \t      {fd.start_bit}U\n'
                         strfdMask = f'{bitWidMask_arr[nBitWid-1]}'
-                        field_define_str += f'#define \t {field_str_}_MSK \t      (({uint_str}){
-                            strfdMask} << {field_str_}_POS)\n'
+                        field_define_str += f'#define \t {field_str_}_MSK \t      (({uint_str}){strfdMask} << {field_str_}_POS)\n'
                         if fd.attribute.find('W') != -1:
-                            field_define_str += f'#define \t {field_str_}_SET(val) \t  (({uint_str})((val) & {
-                                strfdMask}) << {field_str_}_POS)\n'
+                            field_define_str += f'#define \t {field_str_}_SET(val) \t  (({uint_str})((val) & {strfdMask}) << {field_str_}_POS)\n'
 
-                        field_define_str += f'#define \t {field_str_}_GET(val) \t  (({uint_str})((val) & {
-                            field_str_}_MSK) >> {field_str_}_POS)\n'
+                        field_define_str += f'#define \t {field_str_}_GET(val) \t  (({uint_str})((val) & {field_str_}_MSK) >> {field_str_}_POS)\n'
                         field_define_str += '\n\n'
     # define QSPI_FCMDCR_NMDMYC_POS          7U
     # define QSPI_FCMDCR_NMDMYC_MSK          ((uint32_t)0x1F << QSPI_FCMDCR_NMDMYC_POS)
@@ -848,8 +842,7 @@ typedef struct {
 """
         file_body_str += '\n\n'+field_define_str
 
-        file_body_str += f'\n\n\n#define \t GET_{
-            modName.upper()}_HANDLE   ( (st_module_info_{modName} *) base_addr )\n\n'
+        file_body_str += f'\n\n\n#define \t GET_{modName.upper()}_HANDLE   ( (st_module_info_{modName} *) base_addr )\n\n'
 
         inst_str = """
 ////////////////////define for module instance///////////////////////////
@@ -859,8 +852,7 @@ typedef struct {
             inst_ = f'{modName}_{
                 busTypestr_arr[mo.bus_type]}_baseAddr{nbusAddrindex}'
             file_body_str += f'#define \t {inst_}  \t{hex(mo.bus_baseAddr)}\n'
-            inst_str += f'#define \t {
-                modName.upper()}_{nbusAddrindex}    ( (st_module_info_{modName} *) {inst_} )\n'
+            inst_str += f'#define \t {modName.upper()}_{nbusAddrindex}    ( (st_module_info_{modName} *) {inst_} )\n'
             nbusAddrindex += 1
 
         inst_str += """
@@ -930,12 +922,10 @@ def output_ralf_moduleFile(module_inst, modName):
                 group_dim = reg.group_dim
                 # group_name += reg.reg_name
                 if reg.bGroup_stop:
-                    file_body_str += f'\tregister {reg.reg_name}[{group_dim}] @{
-                        reg.offset} + {group_size}'+' {\n'
+                    file_body_str += f'\tregister {reg.reg_name}[{group_dim}] @{reg.offset} + {group_size}'+' {\n'
                     bRegGroup = False
                 else:
-                    file_body_str += f'\tregfile {reg.group_name}[{group_dim}] @{
-                        reg.offset} + {group_size}'+' {\n'
+                    file_body_str += f'\tregfile {reg.group_name}[{group_dim}] @{reg.offset} + {group_size}'+' {\n'
                     file_body_str += f'\t\tregister {reg.reg_name} @{reg.offset-group_startPos}'+' {\n' + \
                         '\t\tbytes '+f'{nRegData_size};\n'
             str_Tab = ''
@@ -947,11 +937,9 @@ def output_ralf_moduleFile(module_inst, modName):
             else:
                 if reg.group_index != 0:
                     if reg.bVirtual:
-                        file_body_str += f'\tvirtual register  {
-                            reg.reg_name} '+' {\n'
+                        file_body_str += f'\tvirtual register  {reg.reg_name} '+' {\n'
                     else:
-                        file_body_str += f'\tregister  {
-                            reg.reg_name} @{reg.offset}'+' {\n'
+                        file_body_str += f'\tregister  {reg.reg_name} @{reg.offset}'+' {\n'
                     file_body_str += F'\t\tbytes {nRegData_size};\n'
 
             # last_offset = reg_offset + nRegData_size
@@ -994,16 +982,13 @@ def output_ralf_moduleFile(module_inst, modName):
                         bReserved = True
                     if not bReserved:
                         if fd.hdl_path:
-                            file_body_str += f'{str_Tab}\t\tfield fd_{fd.field_name} ({fd.hdl_path})  @{
-                                fd.start_bit}'+' {\n'
+                            file_body_str += f'{str_Tab}\t\tfield fd_{fd.field_name} ({fd.hdl_path})  @{fd.start_bit}'+' {\n'
                         else:
-                            file_body_str += f'{str_Tab}\t\tfield fd_{
-                                fd.field_name} @{fd.start_bit}'+' {\n'
+                            file_body_str += f'{str_Tab}\t\tfield fd_{fd.field_name} @{fd.start_bit}'+' {\n'
                         file_body_str += f'{str_Tab}\t\t\tbits {nBitWid} ;\n'
                         file_body_str += f'{str_Tab}\t\t\treset {fd.defaultValue} ;\n'
                         if fd.attribute:
-                            file_body_str += f'{str_Tab}\t\t\taccess {
-                                fd.attribute.lower()} ;\n'
+                            file_body_str += f'{str_Tab}\t\t\taccess {fd.attribute.lower()} ;\n'
                         if fd.field_enumstr:
                             # print(fd.field_enumstr)
                             # b_fd_enum = True
@@ -1031,8 +1016,7 @@ def output_ralf_moduleFile(module_inst, modName):
                                 # file_str
                             field_enum_str += f'\n{str_Tab}\t\t\t'+'} \n'
                             file_body_str += field_enum_str
-                        file_body_str += f'{str_Tab}\t\t\tconstraint c_st_{
-                            fd.field_name} ' + '{\n\t\t\t'
+                        file_body_str += f'{str_Tab}\t\t\tconstraint c_st_{fd.field_name} ' + '{\n\t\t\t'
                         file_body_str += str_Tab+'}\n'
 
                         file_body_str += str_Tab+'\t\t}'
@@ -1045,8 +1029,7 @@ def output_ralf_moduleFile(module_inst, modName):
                 #     reg.group_index = group_index
                 file_body_str += str_Tab+'\t}; ' + f' #{reg.desc} \n'
             else:
-                file_body_str += f'{str_Tab}\tregister  {
-                    reg.regname} @{reg.offset-group_startPos}'+' {\n'
+                file_body_str += f'{str_Tab}\tregister  {reg.regname} @{reg.offset-group_startPos}'+' {\n'
                 file_body_str += F'{str_Tab}\t\tbytes {nRegData_size};\n'
                 file_body_str += str_Tab+'\t\tfield reserved {\n'
                 file_body_str += str_Tab+'\t\t\tbits 4 ;\n'
@@ -1169,8 +1152,7 @@ int main()
             filebodystr += '#endif // CHECK_MODULE_FIELD_DEFAULT_VALUE\n\n'
             filebodystr += '\t}\n'
         elif mod_count == 1:
-            filebodystr += f'\tst_module_info_{
-                modName} * module_inst = {mod_inst_name}_0 ;\n'
+            filebodystr += f'\tst_module_info_{modName} * module_inst = {mod_inst_name}_0 ;\n'
             filebodystr += '#ifdef CHECK_MODULE_FIELD_DEFAULT_VALUE\n'
             filebodystr += f'\tunsigned int nErrCount_default = 0;\n'
             filebodystr += '#endif // CHECK_MODULE_FIELD_DEFAULT_VALUE\n\n'
@@ -1302,19 +1284,15 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                         filebodystr += '\t{\n'
 
                         if bForLoop:
-                            filebodystr += f'{str_Tab}\t\tError("Inst_%u # {
-                                fd_var}  [0x%X] is NOt same! \\n", i, nRegFdVal);\n'
+                            filebodystr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] is NOt same! \\n", i, nRegFdVal);\n'
                         else:
-                            filebodystr += f'{
-                                str_Tab}\t\tError("{fd_var}  [0x%X] is NOt same! \\n", nRegFdVal);\n'
+                            filebodystr += f'{str_Tab}\t\tError("{fd_var}  [0x%X] is NOt same! \\n", nRegFdVal);\n'
                         filebodystr += f'{str_Tab}\t\t++{errCount_var};\n{str_Tab}'
                         filebodystr += '\t}\n'
                         if bForLoop:
-                            filebodystr += f'{str_Tab}\telse\n{
-                                str_Tab}\t\tInfo("Inst_%u # {fd_var} Value is OK. \\n", i);\n'
+                            filebodystr += f'{str_Tab}\telse\n{str_Tab}\t\tInfo("Inst_%u # {fd_var} Value is OK. \\n", i);\n'
                         else:
-                            filebodystr += f'{str_Tab}\telse\n{
-                                str_Tab}\t\tInfo("{fd_var} Value is OK. \\n");\n'
+                            filebodystr += f'{str_Tab}\telse\n{str_Tab}\t\tInfo("{fd_var} Value is OK. \\n");\n'
 
                     enum_val_lst = []
                     if fd.field_enumstr:
@@ -1370,19 +1348,15 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                     filebodystr += '\t{\n'
 
                     if bForLoop:
-                        filebodystr += f'{str_Tab}\t\tError("Inst_%u # {
-                            fd_var}  [0x%X] is not same! \\n", i, nRegFdVal);\n'
+                        filebodystr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] is not same! \\n", i, nRegFdVal);\n'
                     else:
-                        filebodystr += f'{
-                            str_Tab}\t\tError("{fd_var}  [0x%X] is not same! \\n", nRegFdVal);\n'
+                        filebodystr += f'{str_Tab}\t\tError("{fd_var}  [0x%X] is not same! \\n", nRegFdVal);\n'
                     filebodystr += f'{str_Tab}\t\t++{errCount_var};\n{str_Tab}'
                     filebodystr += '\t}\n'
                     if bForLoop:
-                        filebodystr += f'{str_Tab}\telse\n{
-                            str_Tab}\t\tInfo("Inst_%u # {fd_var} Value is OK. \\n", i);\n'
+                        filebodystr += f'{str_Tab}\telse\n{str_Tab}\t\tInfo("Inst_%u # {fd_var} Value is OK. \\n", i);\n'
                     else:
-                        filebodystr += f'{str_Tab}\telse\n{
-                            str_Tab}\t\tInfo("{fd_var} Value is OK. \\n");\n'
+                        filebodystr += f'{str_Tab}\telse\n{str_Tab}\t\tInfo("{fd_var} Value is OK. \\n");\n'
 
                 enum_val_lst = []
                 if fd.field_enumstr:
@@ -1435,8 +1409,7 @@ def fieldWriteChk_func(errCount_Write_var, str_Tab, fd_var, module_fd_var, strfd
     fdWriteCheckstr += f'{str_Tab}\tif({module_fd_var} != {
         strfdMask})\n{str_Tab}'
     fdWriteCheckstr += '\t{\n'
-    fdWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {
-        fd_var}  [0x%X] NOt same as Write [{strfdMask}]! \\n", i, nRegFdVal);\n'
+    fdWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] NOt same as Write [{strfdMask}]! \\n", i, nRegFdVal);\n'
     fdWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
     fdWriteCheckstr += '\t}\n'
     return fdWriteCheckstr
