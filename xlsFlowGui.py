@@ -22,17 +22,18 @@ def sftp_upload_file(host, port, user, password, out_file_list, timeout=10):
         t.banner_timeout = timeout
         t.connect(username=user, password=password)
         sftp = paramiko.SFTPClient.from_transport(t)
-        print("当前工作目录 : %s" % os.getcwd())
+        # print("当前工作目录 : %s" % os.getcwd())
         # svr_path = './'
         for out_f in out_file_list:
-            out_file_name = os.path.abspath(out_f)
+            # out_file_name = os.path.abspath(out_f)
+            out_file_name=out_f
             svr_file_path = os.path.normpath(out_f)
             # print(svr_file_path)
             svr_file_path = svr_file_path.replace('\\', '__')
             svr_file_= './data/'+svr_file_path
-            print(svr_file_)
             # print(out_file_name)
             sftp.put(out_file_name, svr_file_)
+            print('upload: '+svr_file_)
         t.close()
         return True
     except Exception as e:
@@ -61,10 +62,12 @@ if __name__ == '__main__':
         elif event == 'DoXlsXFlow':
             fname = values['-fileName-']
             if (fname):
+                fname=os.path.relpath(fname)
                 out_file_list = dealwith_excel(fname)
                 if out_file_list:
-                    out_file_list.clear()
+                    out_file_list=[]
                     out_file_list.append(fname)
+                    print(out_file_list)
 
     window.close()
 
