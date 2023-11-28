@@ -32,8 +32,9 @@ def sftp_upload_file(host, port, user, password, out_file_list, timeout=10):
             svr_file_path = svr_file_path.replace('\\', '__')
             svr_file_= './data/'+svr_file_path
             # print(out_file_name)
-            sftp.put(out_file_name, svr_file_)
-            print('upload: '+svr_file_)
+            if sftp:
+                sftp.put(out_file_name, svr_file_)
+                print('upload: '+svr_file_)
         t.close()
         return True
     except Exception as e:
@@ -48,7 +49,7 @@ if __name__ == '__main__':
     window = sg.Window('CIP Excel to DV', layout)
     out_file_list = []
     while True:
-        event, values = window.read()
+        event, values = window.read() # type: ignore
         if event == sg.WIN_CLOSED or event == 'Exit':
             break
         if event == 'Upload':
@@ -58,7 +59,7 @@ if __name__ == '__main__':
             usrPsw = values['-usrpsw-']
             if out_file_list and svrIp and usrName:
                 sftp_upload_file(svrIp, svrPort, usrName,
-                                 usrPsw, out_file_list)
+                                usrPsw, out_file_list)
         elif event == 'DoXlsXFlow':
             fname = values['-fileName-']
             if (fname):

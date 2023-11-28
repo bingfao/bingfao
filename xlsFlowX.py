@@ -138,7 +138,7 @@ class St_Module_info:
         return out_str
 
 
-def markCell_InvalidFunc(ws, row, col, clr='ff0000'):
+def markCell_InvalidFunc2(ws, row, col, clr='ff0000'):
     double = Side(border_style="double", color=clr)
     border = Border(left=double,
                     right=double,
@@ -490,6 +490,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                     for em in enum_lst:
                         em_val = em.replace(',', '')
                         em_val = em_val.strip()
+                        em_item_value=''
                         if em_val.find('=') != -1:
                             (em_item_name, em_str,
                                 em_item_value) = em_val.partition('=')
@@ -1341,7 +1342,7 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                                 errCount_Write_var,  str_Tab, fd_var, module_fd_var, strfdMask)
 
                             strfdMask = enum_val_lst[0]
-                            fieldWriteCheckstr++fieldWriteChk_func(
+                            fieldWriteCheckstr+=fieldWriteChk_func(
                                 errCount_Write_var,  str_Tab, fd_var, module_fd_var, strfdMask)
                         else:
                             strfdMask = f'{bitWidMask_arr[nBitWid-1]}'
