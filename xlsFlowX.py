@@ -52,8 +52,7 @@ class St_Filed_info:
         self.xls_row = 0
 
     def field_info_str(self):
-        out_str = f'fieldname: {self.field_name}, end_bit: {self.end_bit}, start_bit: {self.start_bit}, attribute: {
-            self.attribute} \n , defaultValue: {hex(self.defaultValue)}, comments: {self.field_comments}, enum: {self.field_enumstr}'
+        out_str = f'fieldname: {self.field_name}, end_bit: {self.end_bit}, start_bit: {self.start_bit}, attribute: {self.attribute} \n , defaultValue: {hex(self.defaultValue)}, comments: {self.field_comments}, enum: {self.field_enumstr}'
         return out_str
 
 
@@ -290,21 +289,18 @@ def checkModuleSheetVale(ws):  # 传入worksheet
             regName = row[0]
             if bNeedNewReg:
                 if regName is None:
-                    print(
-                        "Cell[A"+str(i)+"] regName must be filled.")
+                    print("Cell[A"+str(i)+"] regName must be filled.")
                     markCell_InvalidFunc(ws, f'A{i}')
                     bRegCheckPass = False
 
             if isinstance(regName, str):
                 regName = regName.strip()
                 if len(regName) == 0:
-                    print(
-                        "Cell[A"+str(i)+"] regName is empty string, Not allowed.")
+                    print("Cell[A"+str(i)+"] regName is empty string, Not allowed.")
                     markCell_InvalidFunc(ws, f'A{i}')
                     bRegCheckPass = False
                 elif isUnallowedVarName(regName):
-                    print(
-                        f'A{i} '+f'regName \"{regName}\" only can include letter,number,and _ in middle.')
+                    print(f'A{i} '+f'regName \"{regName}\" only can include letter,number,and _ in middle.')
                     markCell_InvalidFunc(ws, f'A{i}')
                     bRegCheckPass = False
                 else:
@@ -333,8 +329,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                         reg_info.bGroup_stop = (group_stop == 1)
                         if reg_info.bGroup_start:
                             if not (group_dim and group_size):
-                                print(
-                                    "Cell[H"+str(i)+"] dim and dim_size must be filled.")
+                                print("Cell[H"+str(i)+"] dim and dim_size must be filled.")
                                 if not group_dim:
                                     markCell_InvalidFunc(ws, f'E{i}')
                                 if not group_size:
@@ -364,16 +359,14 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                         reg_info.desc = reg_desc
                         if not reg_info.bVirtual:
                             if regOffset is None:
-                                print(
-                                    "Cell[H"+str(i)+"] offset Addr must be filled.")
+                                print("Cell[H"+str(i)+"] offset Addr must be filled.")
                                 markCell_InvalidFunc(ws, f'H{i}')
                                 bRegCheckPass = False
                             if isinstance(regOffset, str):
                                 # 待增加offset 值越来越大的规则判断
                                 # print(regOffset)
                                 if not isHexString(regOffset):
-                                    print(
-                                        "Cell[F"+str(i)+"] offset Addr must be 0xFFFFFFF like hex string.")
+                                    print("Cell[F"+str(i)+"] offset Addr must be 0xFFFFFFF like hex string.")
                                     markCell_InvalidFunc(ws, f'H{i}')
                                     bRegCheckPass = False
                                 else:
@@ -383,8 +376,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                                         if module.reg_count():
                                             lastOffset = module.reg_list[-1].offset
                                             if lastOffset >= reg_info.offset:
-                                                print(
-                                                    "Cell[H"+str(i)+"] offset Addr must > last reg offset.")
+                                                print("Cell[H"+str(i)+"] offset Addr must > last reg offset.")
                                                 markCell_InvalidFunc(
                                                     ws, f'H{i}')
                                                 bCheckPass = False
@@ -394,8 +386,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                             for module in st_module_list:
                                 module.appendRegInfo(reg_info)
                     else:
-                        print(
-                            "Cell[A"+str(i)+"] regName repeated, Not allowed.")
+                        print("Cell[A"+str(i)+"] regName repeated, Not allowed.")
                         markCell_InvalidFunc(ws, f'A{i}')
                         bRegCheckPass = False
 
@@ -425,8 +416,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                 field_name = field_name.strip()
                 field_name = field_name.upper()
                 if isUnallowedVarName(field_name):
-                    print(
-                        f'J{i} '+f'field_name \"{field_name}\"only can include letter,number,and _ in middle.')
+                    print(f'J{i} '+f'field_name \"{field_name}\"only can include letter,number,and _ in middle.')
                     markCell_InvalidFunc(ws, f'J{i}')
                     bFiled_info_Pass = False
             if endBit is None:
@@ -451,8 +441,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                 startBit = int(startBit)
 
                 if field_name != 'RESERVED' and reg_info.is_fieldInReg(field_name):
-                    print(
-                        "Field Name if not be \"reserved\" NOT Allowed repeat at Row "+str(i))
+                    print("Field Name if not be \"reserved\" NOT Allowed repeat at Row "+str(i))
                     markCell_InvalidFunc(ws, f'J{i}')
                     bFiled_info_Pass = False
 
@@ -465,8 +454,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                         markCell_InvalidFunc(ws, f'L{i}')
                         bFiled_info_Pass = False
                     if endBit >= laststartBit:
-                        print(
-                            "Field End Pos must < last row Start Pos at Row "+str(i))
+                        print("Field End Pos must < last row Start Pos at Row "+str(i))
                         markCell_InvalidFunc(ws, f'K{i}')
                         bFiled_info_Pass = False
                     laststartBit = startBit
@@ -509,16 +497,14 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                             b_enum_err = True
                             break
                         if bFirst and (field_inst.defaultValue != em_item_int_val):
-                            print(
-                                "Field default value must be the first enum value at Row "+str(i))
+                            print("Field default value must be the first enum value at Row "+str(i))
                             markCell_InvalidFunc(ws, f'N{i}')
                             bFiled_info_Pass = False
                         bFirst = False
                     if not b_enum_err:
                         field_inst.field_enumstr = field_enum
                     else:
-                        print(
-                            'Field enum val must be "emName =  (dec or hex value) " at Row '+str(i))
+                        print('Field enum val must be "emName =  (dec or hex value) " at Row '+str(i))
                         markCell_InvalidFunc(ws, f'P{i}')
                         bFiled_info_Pass = False
                 if isinstance(field_constr, str):
@@ -551,8 +537,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
             for fd in reg.field_list:
                 if fd in reg_list:
                     markCell_InvalidFunc(ws, f'J{fd.xls_row}')
-                    print(
-                        "Field Name NOT Allow same as Reg Name at row " + str(fd.xls_row))
+                    print("Field Name NOT Allow same as Reg Name at row " + str(fd.xls_row))
                     bCheckPass = False
                     break
     if bCheckPass:
@@ -615,22 +600,18 @@ def output_SV_moduleFile(module_inst, modName):
                         file_enum_str += '\n} '+f'em_{reg_fd_name};\n\n'
 
                     if b_fd_enum:
-                        file_cls_str += f'\trand em_{
-                            reg_fd_name} {reg_fd_name};\n'
+                        file_cls_str += f'\trand em_{reg_fd_name} {reg_fd_name};\n'
                     else:
                         file_cls_str += f'\trand {bit_str}  {reg_fd_name};\n'
 
-                    uvm_field_str += f'\t\t`uvm_field_int({
-                        reg_fd_name}, UVM_ALL_ON)\n'
+                    uvm_field_str += f'\t\t`uvm_field_int({reg_fd_name}, UVM_ALL_ON)\n'
 
                     fd_name_VAL = f'{reg_fd_name.upper()}_VALUE_'
                     fd_name_VAL = fd_name_VAL.ljust(48)
                     if b_fd_enum:
-                        uvm_fd_val_def_str += f'\t\t$fdisplay(fd, "#define \t {fd_name_VAL}   0x%X   //%s",  {
-                            reg_fd_name}, {reg_fd_name}.name());\n'
+                        uvm_fd_val_def_str += f'\t\t$fdisplay(fd, "#define \t {fd_name_VAL}   0x%X   //%s",  {reg_fd_name}, {reg_fd_name}.name());\n'
                     else:
-                        uvm_fd_val_def_str += f'\t\t$fdisplay(fd, "#define \t {
-                            fd_name_VAL}   0x%X",  {reg_fd_name});\n'
+                        uvm_fd_val_def_str += f'\t\t$fdisplay(fd, "#define \t {fd_name_VAL}   0x%X",  {reg_fd_name});\n'
         uvm_field_str += f'\t`uvm_object_utils_end\n'
 
         uvm_field_str += f'\n\tfunction new(string name = "{
@@ -729,8 +710,7 @@ typedef struct {
                 nRerived = (reg_offset-last_offset) / nRegData_size
                 n = 0
                 while n < nRerived:
-                    file_body_str += f'\tvolatile {
-                        uint_str} u_reg_reserved{nRegReservedIndex};  \n'
+                    file_body_str += f'\tvolatile {uint_str} u_reg_reserved{nRegReservedIndex};  \n'
                     nRegReservedIndex += 1
                     n += 1
             if reg.bGroup_start and reg.group_size and reg.group_dim:
@@ -808,8 +788,7 @@ typedef struct {
             else:
                 if bRegGroup:
                     file_body_str += '\t'
-                file_body_str += f'\tvolatile {uint_str} u_reg_{
-                    reg.regname};   {reg_desc_str} */\n'
+                file_body_str += f'\tvolatile {uint_str} u_reg_{reg.regname};   {reg_desc_str} */\n'
 
             if bRegGroup and reg.bGroup_stop:
                 if not reg.bGroup_start:
@@ -818,8 +797,7 @@ typedef struct {
                 nRerived = (group_size-group_startPos) / nRegData_size
                 n = 0
                 while n < nRerived:
-                    file_body_str += f'\tvolatile {
-                        uint_str} u_reg_reserved{nRegReservedIndex}; \n'
+                    file_body_str += f'\tvolatile {uint_str} u_reg_reserved{nRegReservedIndex}; \n'
                     nRegReservedIndex += 1
                     n += 1
                 file_body_str += "\t}\t" + \
@@ -1100,8 +1078,7 @@ int main()
 """
         mod_inst_name = modName.upper()
         mod_inst = module_inst_list[0]
-        filebodystr += f'\tprintf("After clock switch, Now Check Module: {
-            modName}.\\n");\n'
+        filebodystr += f'\tprintf("After clock switch, Now Check Module: {modName}.\\n");\n'
         if mod_inst.data_width > 32:
             filebodystr += f'\tuint64_t nRegFdVal = 0;\n'
         else:
@@ -1116,13 +1093,11 @@ int main()
                 filebodystr += f'\n\t\t,{mod_inst_name}_{i}'
             filebodystr += '};\n\n'
             filebodystr += '#ifdef CHECK_MODULE_FIELD_DEFAULT_VALUE\n'
-            filebodystr += f'\tunsigned int nErrCount_default[{
-                mod_count}] = '+'{0};\n'
+            filebodystr += f'\tunsigned int nErrCount_default[{mod_count}] = '+'{0};\n'
             filebodystr += '#endif // CHECK_MODULE_FIELD_DEFAULT_VALUE\n\n'
 
             filebodystr += '#ifdef CHECK_MOUDLE_FIELD_WRITE_VALUE\n'
-            filebodystr += f'\tunsigned int nErrCount_wirte[{
-                mod_count}] = '+'{0};\n'
+            filebodystr += f'\tunsigned int nErrCount_wirte[{mod_count}] = '+'{0};\n'
             filebodystr += '#endif // CHECK_MOUDLE_FIELD_WRITE_VALUE\n\n'
 
             filebodystr += f'\tfor(int i = 0; i < {mod_count}; ++i)\n'
@@ -1274,8 +1249,7 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                     reg_fd_var = f'{reg.reg_name}.fd_{fd.field_name}'
                     group_name = reg.group_name[8:]
                     fd_var = f'gp{group_name}[{g_i}].{reg_fd_var}'
-                    module_fd_var = f'{str_Tab}{
-                        modinst_var}->{reg.group_name}[{g_i}].st_reg_{reg_fd_var}'
+                    module_fd_var = f'{str_Tab}{modinst_var}->{reg.group_name}[{g_i}].st_reg_{reg_fd_var}'
                     nBitWid = fd.end_bit-fd.start_bit+1
                     if fd.attribute.find('R') != -1:
                         filebodystr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
@@ -1406,8 +1380,7 @@ def fieldWriteChk_func(errCount_Write_var, str_Tab, fd_var, module_fd_var, strfd
     fdWriteCheckstr = ''
     fdWriteCheckstr += f'{str_Tab}\t{module_fd_var} = {strfdMask};\n'
     fdWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
-    fdWriteCheckstr += f'{str_Tab}\tif({module_fd_var} != {
-        strfdMask})\n{str_Tab}'
+    fdWriteCheckstr += f'{str_Tab}\tif({module_fd_var} != {strfdMask})\n{str_Tab}'
     fdWriteCheckstr += '\t{\n'
     fdWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] NOt same as Write [{strfdMask}]! \\n", i, nRegFdVal);\n'
     fdWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
