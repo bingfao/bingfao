@@ -62,6 +62,9 @@ if __name__ == '__main__':
             fname = values['-fileName-']
             if (fname):
                 out_file_list = dealwith_excel(fname)
+                if out_file_list:
+                    out_file_list.clear()
+                    out_file_list.append(fname)
 
     window.close()
 
