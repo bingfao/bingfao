@@ -377,8 +377,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                                             lastOffset = module.reg_list[-1].offset
                                             if lastOffset >= reg_info.offset:
                                                 print("Cell[H"+str(i)+"] offset Addr must > last reg offset.")
-                                                markCell_InvalidFunc(
-                                                    ws, f'H{i}')
+                                                markCell_InvalidFunc(ws, f'H{i}')
                                                 bCheckPass = False
                                         for module in st_module_list:
                                             module.appendRegInfo(reg_info)
@@ -590,11 +589,9 @@ def output_SV_moduleFile(module_inst, modName):
                                 file_enum_str += ',\n'
                             if len(em_item_value) and em_item_value.startswith('0X'):
                                 em_item_value_int = int(em_item_value, 16)
-                                file_enum_str += f'\t{em_item_name} {
-                                    emstr} {em_item_value_int}'
+                                file_enum_str += f'\t{em_item_name} {emstr} {em_item_value_int}'
                             else:
-                                file_enum_str += f'\t{em_item_name} {
-                                    emstr} {em_item_value}'
+                                file_enum_str += f'\t{em_item_name} {emstr} {em_item_value}'
                             b_emFirstitem = False
                             # file_str
                         file_enum_str += '\n} '+f'em_{reg_fd_name};\n\n'
@@ -614,8 +611,7 @@ def output_SV_moduleFile(module_inst, modName):
                         uvm_fd_val_def_str += f'\t\t$fdisplay(fd, "#define \t {fd_name_VAL}   0x%X",  {reg_fd_name});\n'
         uvm_field_str += f'\t`uvm_object_utils_end\n'
 
-        uvm_field_str += f'\n\tfunction new(string name = "{
-            out_svh_module_Name}");\n'
+        uvm_field_str += f'\n\tfunction new(string name = "{out_svh_module_Name}");\n'
         uvm_field_str += """\t\tsuper.new(name);
     endfunction:new
 
@@ -763,8 +759,7 @@ typedef struct {
                         file_body_str += f'\t\t{uint_str} fd_{filed_name} : {nBitWid} ; {fd_comments_str}\n'
                     field_index -= 1
                     if not bReserved:
-                        field_str_ = f'{reg.reg_name.upper()}_{
-                            filed_name.upper()}'
+                        field_str_ = f'{reg.reg_name.upper()}_{filed_name.upper()}'
                         field_define_str += f'//define for {field_str_}\n'
                         field_define_str += f'#define \t {field_str_}_POS \t      {fd.start_bit}U\n'
                         strfdMask = f'{bitWidMask_arr[nBitWid-1]}'
@@ -827,8 +822,7 @@ typedef struct {
 """
         nbusAddrindex = 0
         for mo in st_module_list:
-            inst_ = f'{modName}_{
-                busTypestr_arr[mo.bus_type]}_baseAddr{nbusAddrindex}'
+            inst_ = f'{modName}_{busTypestr_arr[mo.bus_type]}_baseAddr{nbusAddrindex}'
             file_body_str += f'#define \t {inst_}  \t{hex(mo.bus_baseAddr)}\n'
             inst_str += f'#define \t {modName.upper()}_{nbusAddrindex}    ( (st_module_info_{modName} *) {inst_} )\n'
             nbusAddrindex += 1
@@ -985,11 +979,9 @@ def output_ralf_moduleFile(module_inst, modName):
                                     field_enum_str += ',\n'
                                 if em_item_value and em_item_value.startswith('0X'):
                                     em_item_value_int = int(em_item_value, 16)
-                                    field_enum_str += f'{str_Tab}\t\t\t\t{
-                                        em_item_name} {emstr} {em_item_value_int}'
+                                    field_enum_str += f'{str_Tab}\t\t\t\t{em_item_name} {emstr} {em_item_value_int}'
                                 else:
-                                    field_enum_str += f'{str_Tab}\t\t\t\t{
-                                        em_item_name} {emstr} {em_item_value}'
+                                    field_enum_str += f'{str_Tab}\t\t\t\t{em_item_name} {emstr} {em_item_value}'
                                 b_emFirstitem = False
                                 # file_str
                             field_enum_str += f'\n{str_Tab}\t\t\t'+'} \n'
@@ -1163,58 +1155,7 @@ int main()
             filebodystr += f'\t\telse\n\t\t\tNotice("Inst_%u write-Vals are OK!\\n", i);\n'
             filebodystr += '#endif // CHECK_MODULE_FIELD_DEFAULT_VALUE\n\n'
 
-        # i = 0
-        # for module_inst in module_inst_list:
-        #     # print(module_inst.module_info_str())
-        #     modinst_var = f'{module_inst.module_name.upper()}_{i}'
-        #     group_dim = 0
-        #     for reg in module_inst.reg_list:
-        #         if reg.bVirtual:
-        #             continue
-        #         if reg.bGroup_start and reg.group_dim:
-        #             group_dim = reg.group_dim
-        #         if reg.group_index >= 0 and reg.group_name:
-        #             for g_i in range(0, group_dim):
-        #                 for fd in reg.field_list:
-        #                     if fd.field_name.startswith('reserved'):
-        #                         continue
-        #                     reg_fd_var = f'{reg.reg_name}.fd_{fd.field_name}'
-        #                     fd_var = f'{reg.group_name}[{g_i}].{reg_fd_var}'
-        #                     module_fd_var = f'{modinst_var}->{reg.group_name}[{g_i}].st_reg_{reg_fd_var}'
-        #                     filebodystr += f'\tnRegFdVal = {module_fd_var};\n'
-        #                     filebodystr += f'\tif(nRegFdVal != {fd.defaultValue})\n'
-        #                     filebodystr += '\t{\n'
-        #                     filebodystr += f'\t\tError("Module # FD: {modinst_var} # {fd_var} Value [0x%X] is not same! \\n",nRegFdVal);\n'
-        #                     filebodystr += f'\t\t++nErrCount[{i}];\n'
-        #                     filebodystr += '\t}\n'
-        #                     filebodystr += f'\telse\n\t\tInfo("Module # FD: {modinst_var} # {fd_var} Value is same. \\n");\n'
-        #         else:
-        #             for fd in reg.field_list:
-        #                 if fd.field_name.startswith('reserved'):
-        #                     continue
-        #                 fd_var = f'{reg.reg_name}.fd_{fd.field_name}'
-        #                 module_fd_var = f'{modinst_var}->st_reg_{fd_var}'
-        #                 filebodystr += f'\tnRegFdVal = {module_fd_var};\n'
-        #                 filebodystr += f'\tif(nRegFdVal != {fd.defaultValue})\n'
-        #                 filebodystr += '\t{\n'
-        #                 filebodystr += f'\t\tError("Module # FD: {modinst_var} # {fd_var} Value [0x%X] is not same! \\n",nRegFdVal);\n'
-        #                 filebodystr += f'\t\t++nErrCount[{i}];\n'
-        #                 filebodystr += '\t}\n'
-        #                 filebodystr += f'\telse\n\t\tInfo("Module # FD:: {modinst_var} # {fd_var} Value is same. \\n");\n'
-        #         if reg.bGroup_stop:
-        #             group_dim = 0
-        #     i += 1
-
-        # filebodystr += f'\n\tunsigned int nTotalErr = 0;\n'
-        # filebodystr +=f'\tfor(int i = 0; i < {mod_count}; ++i)\n'
-        # filebodystr +='\t{\n'
-        # filebodystr += '\t\tif(nErrCount[i])\n'
-        # filebodystr +='\t\t{\n'
-        # filebodystr += f'\t\t\tError("{mod_inst_name}_%u default values have [%u] fields NOT Same!\\n",i,nErrCount[i]);\n'
-        # filebodystr += '\t\t\tnTotalErr += nErrCount[i];\n'
-        # filebodystr +='\t\t}\n'
-        # filebodystr += f'\t\telse\n\t\t\tInfo("{mod_inst_name}_%u default values are All Same!\\n",i);\n'
-        # filebodystr +='\t}\n'
+       
         filebodystr += f'\tif(nTotalErr == 0)\n'
         filebodystr += f'\t\tPass("{modName} Vals OK!\\n");\n'
         filebodystr += f'\telse\n\t\tFail("{modName} Vals Not OK!\\n");\n'
