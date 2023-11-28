@@ -522,7 +522,7 @@ if len(sys.argv) == 1:
     event, values = sg.Window('CIP Excel to DV',
                     [[sg.Text('请选择模块excel文件.')],
                     [sg.In(), sg.FileBrowse()],
-                    [sg.Open(), sg.Cancel()]]).read(close=True)
+                    [sg.Open(), sg.Cancel()]]).read(close=True) # type: ignore
     fname = values[0]
 else:
     fname = sys.argv[1]
