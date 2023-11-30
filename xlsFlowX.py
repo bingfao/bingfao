@@ -706,7 +706,7 @@ typedef struct {
                 nRerived = (reg_offset-last_offset) / nRegData_size
                 n = 0
                 while n < nRerived:
-                    file_body_str += f'\tvolatile {uint_str} u_reg_reserved{nRegReservedIndex};  \n'
+                    file_body_str += f'\tvolatile {uint_str} u_reg_RESERVED{nRegReservedIndex};  \n'
                     nRegReservedIndex += 1
                     n += 1
             if reg.bGroup_start and reg.group_size and reg.group_dim:
@@ -738,7 +738,7 @@ typedef struct {
                         # 需要补齐field
                         if bRegGroup:
                             file_body_str += '\t'
-                        file_body_str += f'\t\t{uint_str} fd_reserved{nFieldReservedIndex} : {fd.start_bit-field_bitPos} ;\n'
+                        file_body_str += f'\t\t{uint_str} fd_RESERVED{nFieldReservedIndex} : {fd.start_bit-field_bitPos} ;\n'
                         nFieldReservedIndex += 1
                     bReserved = False
                     field_bitPos = fd.end_bit+1
@@ -746,8 +746,8 @@ typedef struct {
                         '\n', ' ').replace('\r', ' ')
                     nBitWid = field_bitPos-fd.start_bit
                     filed_name = fd.field_name
-                    if filed_name == 'reserved':
-                        filed_name = f'reserved{nFieldReservedIndex}'
+                    if filed_name == 'RESERVED':   #'reserved'
+                        filed_name = f'RESERVED{nFieldReservedIndex}'
                         nFieldReservedIndex += 1
                         bReserved = True
                     if bRegGroup:
@@ -1385,5 +1385,5 @@ def dealwith_excel(xls_file):
 if __name__ == '__main__':
     # 全路径是为方便在vscode中进行调试
     # file_name = 'D:/workspace/demopy/excel_flow/excel/ahb_cfg_20230925.xlsx'
-    file_name = './ahb_subsys_cfg_20231127.xlsx'
+    file_name = './UART_CFG_XY2_20231127.xlsx'
     dealwith_excel(file_name)
