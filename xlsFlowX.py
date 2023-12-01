@@ -1065,7 +1065,7 @@ def outModuleFieldDefaultValueCheckCSrc(module_inst_list, modName):
         out_C_file_Name = dirName+'/main.c'
     elif sys.platform == 'linux':
         dirName = os.path.join(get_output_c_dir(), modName.lower()+'_reg_c_reg_test')
-        out_C_file_Name = dirName+'/main.c'
+        out_C_file_Name = dirName+'_main.c'
     with open(out_C_file_Name, 'w+') as out_file:
         fileHeader = """// Autor: Auto generate by python From module excel\n
 // Version: 0.0.2 X
