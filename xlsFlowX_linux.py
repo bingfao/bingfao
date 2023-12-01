@@ -16,7 +16,7 @@
 
 import re
 # from builtins import str
-import os
+import os,sys
 from openpyxl import load_workbook
 from openpyxl.styles import colors, Border, Side, Font, Color
 
@@ -186,19 +186,22 @@ def isHexString(strVal, b0xStart=True):
     return brt
 
 def get_output_c_dir():
-    prj_root = os.getenv("PRJ_ROOT")
-    result_dir    = os.path.join(prj_root,'dv/tb/reg_model/c')
-    return result_dir
+    if sys.platform == 'linux':
+        prj_root = os.getenv("PRJ_ROOT")
+        result_dir    = os.path.join(prj_root,'dv/tb/reg_model/c')
+        return result_dir
 
 def get_output_dut_cfg_dir():
-    prj_root = os.getenv("PRJ_ROOT")
-    result_dir    = os.path.join(prj_root,'dv/tb/reg_model/sv')
-    return result_dir
+    if sys.platform == 'linux':
+        prj_root = os.getenv("PRJ_ROOT")
+        result_dir    = os.path.join(prj_root,'dv/tb/reg_model/sv')
+        return result_dir
 
 def get_output_ral_dir():
-    prj_root = os.getenv("PRJ_ROOT")
-    result_dir    = os.path.join(prj_root,'dv/tb/reg_model/ral')
-    return result_dir
+    if sys.platform == 'linux':
+        prj_root = os.getenv("PRJ_ROOT")
+        result_dir    = os.path.join(prj_root,'dv/tb/reg_model/ral')
+        return result_dir
 
 def checkModuleSheetVale(ws):  # 传入worksheet
     # print("Start Check Sheet Values.")
@@ -553,14 +556,17 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                     print("Field Name NOT Allow same as Reg Name at row " + str(fd.xls_row))
                     bCheckPass = False
                     break
-    #if bCheckPass:
-    #    print("Check Sheet:  result Pass")
+    if sys.platform== 'win32' and bCheckPass:
+        print("Check Sheet:  result Pass")
     return modName, st_module_list, bCheckPass
 
 
 def output_SV_moduleFile(module_inst, modName):
     out_svh_module_Name = modName.lower()+'_dut_cfg'
-    out_svh_file_name = os.path.join(get_output_dut_cfg_dir(), out_svh_module_Name+'.svh')
+    out_svh_file_name = './'+out_svh_module_Name+'.svh'
+    if sys.platform == 'linux':
+        out_svh_file_name = os.path.join(get_output_dut_cfg_dir(), out_svh_module_Name+'.svh')
+    
     with open(out_svh_file_name, 'w+') as sv_file:
         heder_str = f'_{modName.upper()}_DUT_CFG_SVH_'
         file_str = F'`ifndef {heder_str}\n`define {heder_str}\n\n'
@@ -654,7 +660,9 @@ def output_SV_moduleFile(module_inst, modName):
 
 def output_C_moduleFile(st_module_list, module_inst, modName):
     out_C_file_Name = modName+'_reg'
-    out_file_name = os.path.join(get_output_c_dir(),out_C_file_Name+'.h')
+    out_file_name = './'+out_C_file_Name+'.h'
+    if sys.platform == 'linux':
+        out_file_name = os.path.join(get_output_c_dir(),out_C_file_Name+'.h')
 
     with open(out_file_name, 'w+') as out_file:
         fileHeader = """// Autor: Auto generate by python From module excel\n
@@ -862,7 +870,9 @@ typedef struct {
 
 
 def output_ralf_moduleFile(module_inst, modName):
-    out_ralf_file_Name = os.path.join(get_output_ral_dir(), modName+'.ralf')
+    out_ralf_file_Name = './' + modName+'.ralf'
+    if sys.platform == 'linux':
+        out_ralf_file_Name = os.path.join(get_output_ral_dir(), modName+'.ralf')
     with open(out_ralf_file_Name, 'w+') as out_file:
         fileHeader = """# Autor: Auto generate by python From module excel\n
 # Version: 0.0.2 X
@@ -1049,10 +1059,15 @@ def output_ralf_moduleFile(module_inst, modName):
 
 def outModuleFieldDefaultValueCheckCSrc(module_inst_list, modName):
     # print(modName)
-    dirName = os.path.join(get_output_c_dir(), modName.lower()+'_reg_c_reg_test')
-    # if not os.path.exists(dirName):
-    #     os.makedirs(dirName)
-    out_C_file_Name = dirName+'_main.c'
+    out_C_file_Name=''
+    if sys.platform == 'win32':
+        dirName = './module_check_defaultvalue/'+modName
+        if not os.path.exists(dirName):
+            os.makedirs(dirName)
+        out_C_file_Name = dirName+'/main.c'
+    elif sys.platform == 'linux':
+        dirName = os.path.join(get_output_c_dir(), modName.lower()+'_reg_c_reg_test')
+        out_C_file_Name = dirName+'/main.c'
     with open(out_C_file_Name, 'w+') as out_file:
         fileHeader = """// Autor: Auto generate by python From module excel\n
 // Version: 0.0.2 X
