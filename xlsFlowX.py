@@ -91,10 +91,8 @@ class St_Reg_info:
     def reg_info_str(self):
         group_info = ''
         if self.group_index >= 0:
-            group_info = f'group: {self.group_name}, group_index: {
-                self.group_index}, '
-        out_str = f'regname: {self.reg_name}, offset_addr: {
-            hex(self.offset)}, {group_info} virtual: {self.bVirtual}'
+            group_info = f'group: {self.group_name}, group_index: {self.group_index}, '
+        out_str = f'regname: {self.reg_name}, offset_addr: {hex(self.offset)}, {group_info} virtual: {self.bVirtual}'
 
         # for f in self.field_list:
         #     out_str += "\n"+f.field_info_str()
@@ -130,8 +128,7 @@ class St_Module_info:
         return ""
 
     def module_info_str(self):
-        out_str = f'moduleName: {self.module_name}, bus_type: {
-            self.bus_type}, bus_addr: {hex(self.bus_baseAddr)}'
+        out_str = f'moduleName: {self.module_name}, bus_type: {self.bus_type}, bus_addr: {hex(self.bus_baseAddr)}'
         for r in self.reg_list:
             out_str += "\n"+r.reg_info_str()
         return out_str
@@ -1184,7 +1181,8 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
         if reg.group_index >= 0 and reg.group_name:
             for g_i in range(0, group_dim):
                 for fd in reg.field_list:
-                    if fd.field_name.startswith('reserved'):
+                    fd_name=fd.field_name.upper()
+                    if fd_name.startswith('RESERVED'): #reserved
                         continue
 
                     reg_fd_var = f'{reg.reg_name}.fd_{fd.field_name}'
@@ -1194,8 +1192,7 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                     nBitWid = fd.end_bit-fd.start_bit+1
                     if fd.attribute.find('R') != -1:
                         filebodystr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
-                        filebodystr += f'{str_Tab}\tif(nRegFdVal != {fd.defaultValue})\n{
-                            str_Tab}'
+                        filebodystr += f'{str_Tab}\tif(nRegFdVal != {fd.defaultValue})\n{str_Tab}'
                         filebodystr += '\t{\n'
 
                         if bForLoop:
@@ -1248,7 +1245,8 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
 
         else:
             for fd in reg.field_list:
-                if fd.field_name.startswith('reserved'):
+                fd_name=fd.field_name.upper()
+                if fd_name.startswith('RESERVED'): #reserved
                     continue
                 # 根据attr，判断是否可读
 
@@ -1258,8 +1256,7 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
 
                 if fd.attribute.find('R') != -1:
                     filebodystr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
-                    filebodystr += f'{str_Tab}\tif(nRegFdVal != {fd.defaultValue})\n{
-                        str_Tab}'
+                    filebodystr += f'{str_Tab}\tif(nRegFdVal != {fd.defaultValue})\n{str_Tab}'
                     filebodystr += '\t{\n'
 
                     if bForLoop:
