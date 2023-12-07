@@ -1,4 +1,4 @@
-from xlsFlowX import checkModuleSheetVale,output_C_moduleFile,output_ralf_moduleFile,output_SV_moduleFile,outModuleFieldDefaultValueCheckCSrc
+from xlsFlowX import checkModuleSheetVale,output_C_moduleFile, output_SequenceSv_moduleFile,output_ralf_moduleFile,output_SV_moduleFile,outModuleFieldDefaultValueCheckCSrc
 from openpyxl import load_workbook
 import os
 
@@ -81,11 +81,16 @@ if __name__ == '__main__':
                 if out_file_name:
                     out_file_list.append(out_file_name)
 
-                ahb_pos = 0
+                ahb_pos = len(st_module_list)
                 for index in range(mod_inst_count):
                     if st_module_list[index].bus_type:
                         ahb_pos = index
                         break
+                    
+                out_file_name = output_SequenceSv_moduleFile(st_module_list[0:ahb_pos], modName)
+                if (out_file_name):
+                    out_file_list.append(out_file_name)
+
                 axi_len=mod_inst_count-ahb_pos
                 modName_U=modName.upper()
                 if ahb_pos>0:
@@ -121,7 +126,7 @@ if __name__ == '__main__':
                         mod_inst=st_module_list[index]
                         hal_path=mod_inst.hdl_path
                         if hal_path and hal_path != 'NULL':
-                            soc_ralf_AHB_str+=f'\t\tblock {modName} = {modName_U}{index} ({mod_inst.hdl_path}) @\'h{HexVal(mod_inst.bus_baseAddr)} ;\n'
+                            soc_ralf_AXI_str+=f'\t\tblock {modName} = {modName_U}{index} ({mod_inst.hdl_path}) @\'h{HexVal(mod_inst.bus_baseAddr)} ;\n'
                         else:
                             soc_ralf_AXI_str+=f'\t\tblock {modName} = {modName_U}{index} @\'h{HexVal(mod_inst.bus_baseAddr)} ;\n'
                     # module_inst_axi = st_module_list[-1]
