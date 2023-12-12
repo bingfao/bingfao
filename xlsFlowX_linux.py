@@ -561,6 +561,86 @@ def checkModuleSheetVale(ws):  # 传入worksheet
     return modName, st_module_list, bCheckPass
 
 
+def output_SequenceSv_moduleFile(module_lst ,modName):
+    modName = modName.lower()
+    out_sv_module_Name = f'{modName}_v_reg_test_sequence'
+    out_sv_file_name = './'+out_sv_module_Name+'.sv'
+    if sys.platform == 'linux':
+        out_sv_file_name = os.path.join(get_output_dut_cfg_dir(), out_sv_module_Name+'.svh')
+    if module_lst:
+        module_inst = module_lst[0]
+        with open(out_sv_file_name, 'w+') as sv_file:
+            fileStr = '//created by xlsFlowX \n\n'
+            fileStr += f'class {modName}_v_reg_test_sequence extends cip_base_sequence;\n\n'
+            fileStr += f'\t`uvm_object_utils({modName}_v_reg_test_sequence)\n\n'
+            fileStr += f'\tfunction new(string name="{modName}_v_reg_test_sequence");\n'
+            fileStr += '\t\tsuper.new(name);\n\tendfunction\n\n'
+            fileStr += '\tvirtual task body();\n\n'
+            fileStr += '\t\tuvm_reg_hw_reset_seq     reg_rst_seq;\n'
+            bAllRegFdHdlPathEmpty = True
+            modName_U = modName.upper()
+            reg_fd_access_str =''
+            modinstCount= len(module_lst)
+            if isinstance(module_inst,St_Module_info):
+                for index in range(modinstCount):
+                    fd_hdl_empty_str ='' 
+                    module_index = f'{modName_U}{index}'
+                    for reg in module_inst.reg_list:
+                        if reg.bVirtual:
+                            continue
+                        bRegFdHdlEmpty = True
+                        for fd in reg.field_list:
+                            if fd.hdl_path:
+                                bAllRegFdHdlPathEmpty = False
+                                bRegFdHdlEmpty = False
+                        if bRegFdHdlEmpty:
+                            fd_hdl_empty_str += '\t\tuvm_resource_db#(bit)::set({"REG::",p_sequencer.u_soc_reg_model.'
+                            fd_hdl_empty_str += module_index
+                            if reg.bGroup_start and reg.group_size and reg.group_dim:
+                                if reg.bGroup_stop:
+                                    fd_hdl_empty_str += f'.{reg.reg_name}[{reg.group_dim}]'
+                                else:
+                                    fd_hdl_empty_str += f'{reg.group_name}[{reg.group_dim}].{reg.reg_name}'
+                                    pass
+                            else:
+                                fd_hdl_empty_str += f'.{reg.reg_name}'
+                            fd_hdl_empty_str += '.get_full_name()},"NO_REG_ACCESS_TEST",1,this);\n'
+                    if bAllRegFdHdlPathEmpty:
+                        pass
+                    else:
+                        reg_fd_access_str += fd_hdl_empty_str + '\n'
+                pass
+            if not bAllRegFdHdlPathEmpty:
+                fileStr += '\t\tuvm_reg_access_seq       reg_access_seq;\n\n'
+            fileStr += '\t\tsuper.body;\n\n'
+
+
+            fileStr += '\t\t`uvm_info("UVM_SEQ","register reset sequence started",UVM_LOW)\n'
+            fileStr += '\t\treg_rst_seq = new();\n'
+            for index in range(modinstCount):
+                module_index = f'{modName_U}{index}'
+                fileStr += f'\t\treg_rst_seq.model = p_sequencer.u_soc_reg_model.{module_index};\n'
+                fileStr += '\t\treg_rst_seq.start(p_sequencer);\n'
+            fileStr += '\t\t`uvm_info("UVM_SEQ","register reset sequence finished",UVM_LOW)\n\n'
+
+            if not bAllRegFdHdlPathEmpty:
+                fileStr += '\t\t`uvm_info("UVM_SEQ","register access sequence started",UVM_LOW)\n'
+                fileStr += reg_fd_access_str
+                fileStr += '\t\treg_access_seq = new();\n'
+                for index in range(modinstCount):
+                    module_index = f'{modName_U}{index}'
+                    fileStr += f'\t\treg_access_seq.model = p_sequencer.u_soc_reg_model.{module_index};\n'
+                    fileStr += '\t\treg_access_seq.start(p_sequencer);\n'
+                    pass
+
+                fileStr += '\t\t`uvm_info("UVM_SEQ","register access sequence finished",UVM_LOW)\n'
+            
+            fileStr += '\n\tendtask: body\n\n'
+            fileStr += f'endclass:{modName}_v_reg_test_sequence\n'
+            sv_file.write(fileStr)
+            pass
+    pass
+
 def output_SV_moduleFile(module_inst, modName):
     out_svh_module_Name = modName.lower()+'_dut_cfg'
     out_svh_file_name = './'+out_svh_module_Name+'.svh'
@@ -973,7 +1053,7 @@ def output_ralf_moduleFile(module_inst, modName):
                     fd.field_comments = fd.field_comments.replace(
                         '\n', ' ').replace('\r', ' ')
                     nBitWid = field_bitPos-fd.start_bit
-                    if fd.field_name == 'reserved':
+                    if fd.field_name == 'RESERVED':   #reserved
                         # fd.field_name = f'reserved{nFieldReservedIndex}'
                         # nFieldReservedIndex += 1
                         bReserved = True
@@ -1380,14 +1460,17 @@ def dealwith_excel(xls_file):
             if (out_file_name):
                 out_file_list.append(out_file_name)
 
-            ahb_pos = 0
+            ahb_pos =  len(st_module_list)
             for index in range(mod_inst_count):
                 if st_module_list[index].bus_type:
                     ahb_pos = index
                     break
             # print(ahb_pos)
-            out_file_name = outModuleFieldDefaultValueCheckCSrc(
-                st_module_list[0:ahb_pos], modName)
+            out_file_name = output_SequenceSv_moduleFile(st_module_list[0:ahb_pos], modName)
+            if (out_file_name):
+                out_file_list.append(out_file_name)
+           
+            out_file_name = outModuleFieldDefaultValueCheckCSrc(st_module_list[0:ahb_pos], modName)
             if (out_file_name):
                 out_file_list.append(out_file_name)
 
