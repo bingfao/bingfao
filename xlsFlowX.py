@@ -561,7 +561,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
 
 def output_SequenceSv_moduleFile(module_lst ,modName):
     modName = modName.lower()
-    out_sv_module_Name = modName+'_sequence'
+    out_sv_module_Name = f'{modName}_v_reg_test_sequence'
     out_sv_file_name = './'+out_sv_module_Name+'.sv'
     if sys.platform == 'linux':
         out_sv_file_name = os.path.join(get_output_dut_cfg_dir(), out_sv_module_Name+'.svh')
@@ -593,7 +593,16 @@ def output_SequenceSv_moduleFile(module_lst ,modName):
                                 bRegFdHdlEmpty = False
                         if bRegFdHdlEmpty:
                             fd_hdl_empty_str += '\t\tuvm_resource_db#(bit)::set({"REG::",p_sequencer.u_soc_reg_model.'
-                            fd_hdl_empty_str += f'{module_index}.{reg.reg_name}' + '.get_full_name()},"NO_REG_ACCESS_TEST",1,this);\n'
+                            fd_hdl_empty_str += module_index
+                            if reg.bGroup_start and reg.group_size and reg.group_dim:
+                                if reg.bGroup_stop:
+                                    fd_hdl_empty_str += f'.{reg.reg_name}[{reg.group_dim}]'
+                                else:
+                                    fd_hdl_empty_str += f'{reg.group_name}[{reg.group_dim}].{reg.reg_name}'
+                                    pass
+                            else:
+                                fd_hdl_empty_str += f'.{reg.reg_name}'
+                            fd_hdl_empty_str += '.get_full_name()},"NO_REG_ACCESS_TEST",1,this);\n'
                     if bAllRegFdHdlPathEmpty:
                         pass
                     else:
@@ -605,7 +614,7 @@ def output_SequenceSv_moduleFile(module_lst ,modName):
 
 
             fileStr += '\t\t`uvm_info("UVM_SEQ","register reset sequence started",UVM_LOW)\n'
-            fileStr += '\t\teg_rst_seq = new();\n'
+            fileStr += '\t\treg_rst_seq = new();\n'
             for index in range(modinstCount):
                 module_index = f'{modName_U}{index}'
                 fileStr += f'\t\treg_rst_seq.model = p_sequencer.u_soc_reg_model.{module_index};\n'
@@ -625,7 +634,7 @@ def output_SequenceSv_moduleFile(module_lst ,modName):
                 fileStr += '\t\t`uvm_info("UVM_SEQ","register access sequence finished",UVM_LOW)\n'
             
             fileStr += '\n\tendtask: body\n\n'
-            fileStr += 'endclass:DW_apb_uart_v_reg_test_sequence\n'
+            fileStr += f'endclass:{modName}_v_reg_test_sequence\n'
             sv_file.write(fileStr)
             pass
     pass
@@ -1042,7 +1051,7 @@ def output_ralf_moduleFile(module_inst, modName):
                     fd.field_comments = fd.field_comments.replace(
                         '\n', ' ').replace('\r', ' ')
                     nBitWid = field_bitPos-fd.start_bit
-                    if fd.field_name == 'reserved':
+                    if fd.field_name == 'RESERVED':   #reserved
                         # fd.field_name = f'reserved{nFieldReservedIndex}'
                         # nFieldReservedIndex += 1
                         bReserved = True

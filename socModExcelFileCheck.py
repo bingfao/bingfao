@@ -97,10 +97,13 @@ if __name__ == '__main__':
                     for index in range(ahb_pos):
                         mod_inst=st_module_list[index]
                         hal_path=mod_inst.hdl_path
+                        baseAddr = mod_inst.bus_baseAddr
+                        if isinstance(baseAddr,int):
+                            baseAddr = baseAddr & 0x1FFFFFFF
                         if hal_path and hal_path != 'NULL':
-                            soc_ralf_AHB_str+=f'\t\tblock {modName} = {modName_U}{index} ({mod_inst.hdl_path}) @\'h{HexVal(mod_inst.bus_baseAddr)} ;\n'
+                            soc_ralf_AHB_str+=f'\t\tblock {modName} = {modName_U}{index} ({mod_inst.hdl_path}) @\'h{HexVal(baseAddr)} ;\n'
                         else:
-                            soc_ralf_AHB_str+=f'\t\tblock {modName} = {modName_U}{index} @\'h{HexVal(mod_inst.bus_baseAddr)} ;\n'
+                            soc_ralf_AHB_str+=f'\t\tblock {modName} = {modName_U}{index} @\'h{HexVal(baseAddr)} ;\n'
                     # if ahb_pos>1:
                     #     ahb_baseAddr_lst=[]
                     #     for index in range(ahb_pos):
@@ -125,10 +128,13 @@ if __name__ == '__main__':
                     for index in range(ahb_pos,mod_inst_count):
                         mod_inst=st_module_list[index]
                         hal_path=mod_inst.hdl_path
+                        baseAddr = mod_inst.bus_baseAddr
+                        if isinstance(baseAddr,int):
+                            baseAddr = baseAddr & 0x1FFFFFFF
                         if hal_path and hal_path != 'NULL':
-                            soc_ralf_AXI_str+=f'\t\tblock {modName} = {modName_U}{index} ({mod_inst.hdl_path}) @\'h{HexVal(mod_inst.bus_baseAddr)} ;\n'
+                            soc_ralf_AXI_str+=f'\t\tblock {modName} = {modName_U}{index} ({mod_inst.hdl_path}) @\'h{HexVal(baseAddr)} ;\n'
                         else:
-                            soc_ralf_AXI_str+=f'\t\tblock {modName} = {modName_U}{index} @\'h{HexVal(mod_inst.bus_baseAddr)} ;\n'
+                            soc_ralf_AXI_str+=f'\t\tblock {modName} = {modName_U}{index} @\'h{HexVal(baseAddr)} ;\n'
                     # module_inst_axi = st_module_list[-1]
                     # if axi_len ==1:
                     #     soc_ralf_AXI_str+=f'\t\tblock {modName} @\'h{HexVal(module_inst_axi.bus_baseAddr)} ;\n'
