@@ -592,17 +592,21 @@ def output_SequenceSv_moduleFile(module_lst ,modName):
                                 bAllRegFdHdlPathEmpty = False
                                 bRegFdHdlEmpty = False
                         if bRegFdHdlEmpty:
-                            fd_hdl_empty_str += '\t\tuvm_resource_db#(bit)::set({"REG::",p_sequencer.u_soc_reg_model.'
-                            fd_hdl_empty_str += module_index
+                            hdl_empty_str = '\t\tuvm_resource_db#(bit)::set({"REG::",p_sequencer.u_soc_reg_model.'
+                            hdl_empty_str += module_index
                             if reg.bGroup_start and reg.group_size and reg.group_dim:
-                                if reg.bGroup_stop:
-                                    fd_hdl_empty_str += f'.{reg.reg_name}[{reg.group_dim}]'
-                                else:
-                                    fd_hdl_empty_str += f'{reg.group_name}[{reg.group_dim}].{reg.reg_name}'
-                                    pass
+                                for di in range(reg.group_dim):
+                                    row_hdl_empty_str = hdl_empty_str
+                                    if reg.bGroup_stop:
+                                        row_hdl_empty_str += f'.{reg.reg_name}[{di}]'
+                                    else:
+                                        row_hdl_empty_str += f'{reg.group_name}[{di}].{reg.reg_name}'
+                                        pass
+                                    row_hdl_empty_str += '.get_full_name()},"NO_REG_ACCESS_TEST",1,this);\n'
+                                    fd_hdl_empty_str += row_hdl_empty_str
                             else:
-                                fd_hdl_empty_str += f'.{reg.reg_name}'
-                            fd_hdl_empty_str += '.get_full_name()},"NO_REG_ACCESS_TEST",1,this);\n'
+                                row_hdl_empty_str = hdl_empty_str + f'.{reg.reg_name}' + '.get_full_name()},"NO_REG_ACCESS_TEST",1,this);\n'
+                                fd_hdl_empty_str += row_hdl_empty_str
                     if bAllRegFdHdlPathEmpty:
                         pass
                     else:

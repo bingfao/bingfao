@@ -16,15 +16,15 @@ if __name__ == '__main__':
         mod_dict = {}
         for entry in it:
             entry_name = entry.name.lower()
-            if not entry_name.startswith('.') and entry.is_file() and entry_name.endswith('.xlsx'):
+            if not entry_name.startswith('.') and entry.is_file() and entry.name.endswith('.xlsx'):
                 # print(entry.name)\
                 ni = len(entry_name)-5
                 ri = entry_name.rfind('_')
                 if ri != -1:
                     # print(mod_name)
                     if ri < ni:
-                        mod_name = entry_name[0:ri]
-                        date_val = entry_name[ri+1:ni]
+                        mod_name = entry.name[0:ri]
+                        date_val = entry.name[ri+1:ni]
                         if date_val.isnumeric():
                             # print('name: {0} , date: {1}'.format(mod_name, date_val))
                             if mod_name in mod_dict:
