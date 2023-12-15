@@ -1084,7 +1084,11 @@ def output_ralf_moduleFile(module_inst, modName):
                         else:
                             file_body_str += f'{str_Tab}\t\tfield fd_{fd.field_name} @{fd.start_bit}'+' {\n'
                         file_body_str += f'{str_Tab}\t\t\tbits {nBitWid} ;\n'
-                        file_body_str += f'{str_Tab}\t\t\treset {fd.defaultValue} ;\n'
+                        if fd.defaultValue == 'X':
+                            file_body_str += f"{str_Tab}\t\t\treset {nBitWid}'bX;\n"
+                            pass
+                        else:
+                            file_body_str += f'{str_Tab}\t\t\treset {fd.defaultValue} ;\n'
                         if fd.attribute:
                             file_body_str += f'{str_Tab}\t\t\taccess {fd.attribute.lower()} ;\n'
                         if fd.field_enumstr:
