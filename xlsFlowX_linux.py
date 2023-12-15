@@ -1342,7 +1342,8 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                                     em_item_value_int = int(em_item_value)
                                 enum_val_lst.append(em_item_value_int)
                     # 先赋值为全1
-                    if fd.attribute.find('W') != -1:
+                    #if fd.attribute.find('W') != -1:
+                    if fd.attribute == 'RW':
                         if len(enum_val_lst) > 1:
                             strfdMask = enum_val_lst[-1]
                             fieldWriteCheckstr += fieldWriteChk_func(
@@ -1405,7 +1406,8 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                                 em_item_value_int = int(em_item_value)
                             enum_val_lst.append(em_item_value_int)
 
-                if fd.attribute.find('W') != -1:
+                #if fd.attribute.find('W') != -1:
+                if fd.attribute == 'RW':
                     if len(enum_val_lst) > 1:
                         strfdMask = enum_val_lst[-1]
                         fieldWriteCheckstr += fieldWriteChk_func(
