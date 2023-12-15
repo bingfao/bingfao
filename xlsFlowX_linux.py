@@ -14,6 +14,7 @@
 #             3. support virtual reg and  reg  group
 
 
+from datetime import date
 import re
 # from builtins import str
 import os,sys
@@ -41,11 +42,11 @@ fieldRWOp_arr = ('rw', 'ro', 'wo', 'w1', 'w1c', 'rc', 'rs', 'wrc', 'wrs', 'wc', 
 
 
 class St_Filed_info:
-    def __init__(self, name, attr):
+    def __init__(self, name: str, attr: str):
         self.end_bit = 31
         self.start_bit = 0
         self.attribute = attr
-        self.defaultValue = 0
+        self.defaultValue = ''
         self.field_name = name
         self.field_comments = ''
         self.field_enumstr = ''
@@ -55,7 +56,7 @@ class St_Filed_info:
         self.xls_row = 0
 
     def field_info_str(self):
-        out_str = f'fieldname: {self.field_name}, end_bit: {self.end_bit}, start_bit: {self.start_bit}, attribute: {self.attribute} \n , defaultValue: {hex(self.defaultValue)}, comments: {self.field_comments}, enum: {self.field_enumstr}'
+        out_str = f'fieldname: {self.field_name}, end_bit: {self.end_bit}, start_bit: {self.start_bit}, attribute: {self.attribute} \n , defaultValue: {self.defaultValue}, comments: {self.field_comments}, enum: {self.field_enumstr}'
         return out_str
 
 
@@ -171,14 +172,28 @@ def isUnallowedVarName(strVal):
     return (matchObject is None)
 
 
+def isIntValueEqual(strVal,intVal):
+    brt = False
+    if isHexString(strVal):
+        nVal = int (strVal,16)
+        brt = (nVal == intVal)
+        pass
+    elif strVal.isdecimal():
+        nVal = int (strVal)
+        brt = (nVal == intVal)
+        pass
+    return brt
+
 def isHexString(strVal, b0xStart=True):
     strUpper = strVal.upper()
     brt = True
     if b0xStart:
         brt = strUpper.startswith('0X')
-    hexstr = '0123456789ABCDEF'
-    if brt:
         strhex = strUpper[2:]
+    else:
+        strhex = strUpper
+    hexstr = '0123456789ABCDEF'
+    if brt:  
         for c in strhex:
             if c not in hexstr:
                 brt = False
@@ -485,8 +500,9 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                 field_enum = row[15]
                 field_constr = row[16]
                 if isinstance(default_val, str):
-                    if isHexString(default_val):
-                        field_inst.defaultValue = int(default_val, 16)
+                    #if isHexString(default_val):
+                    #    field_inst.defaultValue = int(default_val, 16)
+                    field_inst.defaultValue = default_val
                 if isinstance(field_enum, str):
                     enum_lst = field_enum.splitlines()
                     b_enum_err = False
@@ -512,7 +528,7 @@ def checkModuleSheetVale(ws):  # 传入worksheet
                         else:
                             b_enum_err = True
                             break
-                        if bFirst and (field_inst.defaultValue != em_item_int_val):
+                        if bFirst and  not isIntValueEqual(field_inst.defaultValue, em_item_int_val):
                             print("Field default value must be the first enum value at Row "+str(i))
                             markCell_InvalidFunc(ws, f'N{i}')
                             bFiled_info_Pass = False
@@ -1157,8 +1173,11 @@ def outModuleFieldDefaultValueCheckCSrc(module_inst_list, modName):
 // Version: 0.0.2 X
 // Description : field default value check for module instance \n
 // Waring: Do NOT Modify it !
-// Copyright (C) 2020-2021 CIP United Co. Ltd.  All Rights Reserved.
+"""
 
+        today = date.today()
+        fileHeader += f'// Copyright (C) {today.year} CIP United Co. Ltd.  All Rights Reserved.\n'
+        fileHeader += """
 #define DEBUG
 //#define INFO
 #define WARNING
@@ -1301,6 +1320,8 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                     fd_name=fd.field_name.upper()
                     if fd_name.startswith('RESERVED'): #reserved
                         continue
+                    if fd.defaultValue == 'X':
+                        continue
 
                     reg_fd_var = f'{reg.reg_name}.fd_{fd.field_name}'
                     group_name = reg.group_name[8:]
@@ -1365,6 +1386,8 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
             for fd in reg.field_list:
                 fd_name=fd.field_name.upper()
                 if fd_name.startswith('RESERVED'): #reserved
+                    continue
+                if fd.defaultValue == 'X':
                     continue
                 # 根据attr，判断是否可读
 
