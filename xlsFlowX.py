@@ -656,7 +656,8 @@ def output_SequenceSv_moduleFile(module_lst ,modName):
             fileStr += '\n\tendtask: body\n\n'
             fileStr += f'endclass:{modName}_v_reg_test_sequence\n'
             sv_file.write(fileStr)
-            pass
+
+            return out_sv_file_name
     pass
 
 def output_SV_moduleFile(module_inst, modName):
