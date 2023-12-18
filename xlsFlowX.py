@@ -1193,6 +1193,15 @@ def outModuleFieldDefaultValueCheckCSrc(module_inst_list, modName):
 
 #define CHECK_MOUDLE_FIELD_WRITE_VALUE
 
+#include <stdio.h>
+#include <time.h>
+
+void getCurrentTimeStr(char* const szTimeBuf,int nBufSize ){
+	time_t t = time(NULL);
+	struct  tm* lct  = localtime(&t);
+    sprintf_s(szTimeBuf,nBufSize,"time: %02d %02d:%2d:%02d", lct->tm_yday,lct->tm_hour,lct->tm_min,lct->tm_sec);
+}
+
 #include "log.h"
 #include "pll.h"
 
@@ -1211,9 +1220,9 @@ int main()
             filebodystr += f'\tuint64_t nRegFdVal = 0;\n'
         else:
             filebodystr += f'\tunsigned int nRegFdVal = 0;\n'
+        filebodystr += f'\tunsigned int nTotalErr = 0;\n'
+        filebodystr += '\tchar szTimeBuf[64] = {0};\n\n'
         mod_count = len(module_inst_list)
-
-        filebodystr += f'\n\tunsigned int nTotalErr = 0;\n'
         if mod_count > 1:
             filebodystr += f'\tst_module_info_{modName} * module_inst[{mod_count}] = ' + \
                 '{'+f'{mod_inst_name}_0'
@@ -1335,11 +1344,11 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                         filebodystr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
                         filebodystr += f'{str_Tab}\tif(nRegFdVal != {fd.defaultValue})\n{str_Tab}'
                         filebodystr += '\t{\n'
-
+                        filebodystr += f'{str_Tab}\t\tgetCurrentTimeStr(szTimeBuf,sizeof szTimeBuf);\n'
                         if bForLoop:
-                            filebodystr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] is NOt same! \\n", i, nRegFdVal);\n'
+                            filebodystr += f'{str_Tab}\t\tError("%s, Inst_%u # {fd_var}  [0x%X] is NOt same! \\n", szTimeBuf, i, nRegFdVal);\n'
                         else:
-                            filebodystr += f'{str_Tab}\t\tError("{fd_var}  [0x%X] is NOt same! \\n", nRegFdVal);\n'
+                            filebodystr += f'{str_Tab}\t\tError("%s, {fd_var}  [0x%X] is NOt same! \\n", szTimeBuf,nRegFdVal);\n'
                         filebodystr += f'{str_Tab}\t\t++{errCount_var};\n{str_Tab}'
                         filebodystr += '\t}\n'
                         if bForLoop:
@@ -1402,11 +1411,11 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                     filebodystr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
                     filebodystr += f'{str_Tab}\tif(nRegFdVal != {fd.defaultValue})\n{str_Tab}'
                     filebodystr += '\t{\n'
-
+                    filebodystr += f'{str_Tab}\t\tgetCurrentTimeStr(szTimeBuf,sizeof szTimeBuf);\n'
                     if bForLoop:
-                        filebodystr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] is not same! \\n", i, nRegFdVal);\n'
+                        filebodystr += f'{str_Tab}\t\tError("%s, Inst_%u # {fd_var}  [0x%X] is not same! \\n", szTimeBuf, i, nRegFdVal);\n'
                     else:
-                        filebodystr += f'{str_Tab}\t\tError("{fd_var}  [0x%X] is not same! \\n", nRegFdVal);\n'
+                        filebodystr += f'{str_Tab}\t\tError("%s, {fd_var}  [0x%X] is not same! \\n", szTimeBuf, nRegFdVal);\n'
                     filebodystr += f'{str_Tab}\t\t++{errCount_var};\n{str_Tab}'
                     filebodystr += '\t}\n'
                     if bForLoop:
@@ -1465,7 +1474,8 @@ def fieldWriteChk_func(errCount_Write_var, str_Tab, fd_var, module_fd_var, strfd
     fdWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
     fdWriteCheckstr += f'{str_Tab}\tif({module_fd_var} != {strfdMask})\n{str_Tab}'
     fdWriteCheckstr += '\t{\n'
-    fdWriteCheckstr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] NOt same as Write [{strfdMask}]! \\n", i, nRegFdVal);\n'
+    fdWriteCheckstr += f'{str_Tab}\t\tgetCurrentTimeStr(szTimeBuf,sizeof szTimeBuf);\n'
+    fdWriteCheckstr += f'{str_Tab}\t\tError("%s, Inst_%u # {fd_var}  [0x%X] NOt same as Write [{strfdMask}]! \\n", szTimeBuf, i, nRegFdVal);\n'
     fdWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
     fdWriteCheckstr += '\t}\n'
     return fdWriteCheckstr
