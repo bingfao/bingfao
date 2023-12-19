@@ -1197,9 +1197,13 @@ def outModuleFieldDefaultValueCheckCSrc(module_inst_list, modName):
 #include <time.h>
 
 void getCurrentTimeStr(char* const szTimeBuf,int nBufSize ){
-	time_t t = time(NULL);
-	struct  tm* lct  = localtime(&t);
-    sprintf_s(szTimeBuf,nBufSize,"time: %02d %02d:%2d:%02d", lct->tm_yday,lct->tm_hour,lct->tm_min,lct->tm_sec);
+ // time_t t = time(NULL);
+ // struct  tm* lct  = localtime(&t);
+ // sprintf_s(szTimeBuf,nBufSize,"time: %02d %02d:%02d:%02d", lct->tm_mday,lct->tm_hour,lct->tm_min,lct->tm_sec);
+    struct timespec ts;
+    timespec_get(&ts, TIME_UTC);
+	struct tm * lct = localtime(&ts.tv_sec);
+    sprintf_s(szTimeBuf,nBufSize,"time: %02d %02d:%02d:%02d [%09ld]", lct->tm_mday,lct->tm_hour,lct->tm_min,lct->tm_sec,ts.tv_nsec);
 }
 
 #include "log.h"
