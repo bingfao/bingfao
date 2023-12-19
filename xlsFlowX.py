@@ -1196,15 +1196,12 @@ def outModuleFieldDefaultValueCheckCSrc(module_inst_list, modName):
 #include <stdio.h>
 #include <time.h>
 
-void getCurrentTimeStr(char* const szTimeBuf,int nBufSize ){
- // time_t t = time(NULL);
- // struct  tm* lct  = localtime(&t);
- // sprintf_s(szTimeBuf,nBufSize,"time: %02d %02d:%02d:%02d", lct->tm_mday,lct->tm_hour,lct->tm_min,lct->tm_sec);
-    struct timespec ts;
-    timespec_get(&ts, TIME_UTC);
-	struct tm * lct = localtime(&ts.tv_sec);
-    sprintf_s(szTimeBuf,nBufSize,"time: %02d %02d:%02d:%02d [%09ld]", lct->tm_mday,lct->tm_hour,lct->tm_min,lct->tm_sec,ts.tv_nsec);
-}
+// void getCurrentTimeStr(char* const szTimeBuf,int nBufSize ){
+//     struct timespec ts;
+//     timespec_get(&ts, TIME_UTC);
+// 	struct tm * lct = localtime(&ts.tv_sec);
+//     sprintf_s(szTimeBuf,nBufSize,"time: %02d %02d:%02d:%02d [%09ld]", lct->tm_mday,lct->tm_hour,lct->tm_min,lct->tm_sec,ts.tv_nsec);
+// }
 
 #include "log.h"
 #include "pll.h"
@@ -1348,11 +1345,11 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                         filebodystr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
                         filebodystr += f'{str_Tab}\tif(nRegFdVal != {fd.defaultValue})\n{str_Tab}'
                         filebodystr += '\t{\n'
-                        filebodystr += f'{str_Tab}\t\tgetCurrentTimeStr(szTimeBuf,sizeof szTimeBuf);\n'
+                        filebodystr += f'{str_Tab}\t\tPrint_time();\n'
                         if bForLoop:
-                            filebodystr += f'{str_Tab}\t\tError("%s, Inst_%u # {fd_var}  [0x%X] is NOt same! \\n", szTimeBuf, i, nRegFdVal);\n'
+                            filebodystr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] is NOt same! \\n", i, nRegFdVal);\n'
                         else:
-                            filebodystr += f'{str_Tab}\t\tError("%s, {fd_var}  [0x%X] is NOt same! \\n", szTimeBuf,nRegFdVal);\n'
+                            filebodystr += f'{str_Tab}\t\tError("{fd_var}  [0x%X] is NOt same! \\n",nRegFdVal);\n'
                         filebodystr += f'{str_Tab}\t\t++{errCount_var};\n{str_Tab}'
                         filebodystr += '\t}\n'
                         if bForLoop:
@@ -1415,11 +1412,11 @@ def getModuleFdStr(mod_inst, errCount_var, errCount_Write_var, modinst_var, bFor
                     filebodystr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
                     filebodystr += f'{str_Tab}\tif(nRegFdVal != {fd.defaultValue})\n{str_Tab}'
                     filebodystr += '\t{\n'
-                    filebodystr += f'{str_Tab}\t\tgetCurrentTimeStr(szTimeBuf,sizeof szTimeBuf);\n'
+                    filebodystr += f'{str_Tab}\t\tPrint_time();\n'
                     if bForLoop:
-                        filebodystr += f'{str_Tab}\t\tError("%s, Inst_%u # {fd_var}  [0x%X] is not same! \\n", szTimeBuf, i, nRegFdVal);\n'
+                        filebodystr += f'{str_Tab}\t\tError("Inst_%u # {fd_var}  [0x%X] is not same! \\n", i, nRegFdVal);\n'
                     else:
-                        filebodystr += f'{str_Tab}\t\tError("%s, {fd_var}  [0x%X] is not same! \\n", szTimeBuf, nRegFdVal);\n'
+                        filebodystr += f'{str_Tab}\t\tError("{fd_var}  [0x%X] is not same! \\n", nRegFdVal);\n'
                     filebodystr += f'{str_Tab}\t\t++{errCount_var};\n{str_Tab}'
                     filebodystr += '\t}\n'
                     if bForLoop:
