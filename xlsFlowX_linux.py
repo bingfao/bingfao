@@ -1201,7 +1201,7 @@ def outModuleFieldDefaultValueCheckCSrc(module_inst_list, modName):
 // void getCurrentTimeStr(char* const szTimeBuf,int nBufSize ){
 //     struct timespec ts;
 //     timespec_get(&ts, TIME_UTC);
-// 	struct tm * lct = localtime(&ts.tv_sec);
+//     struct tm * lct = localtime(&ts.tv_sec);
 //     sprintf_s(szTimeBuf,nBufSize,"time: %02d %02d:%02d:%02d [%09ld]", lct->tm_mday,lct->tm_hour,lct->tm_min,lct->tm_sec,ts.tv_nsec);
 // }
 
@@ -1224,7 +1224,7 @@ int main()
         else:
             filebodystr += f'\tunsigned int nRegFdVal = 0;\n'
         filebodystr += f'\tunsigned int nTotalErr = 0;\n'
-        filebodystr += '\tchar szTimeBuf[64] = {0};\n\n'
+
         mod_count = len(module_inst_list)
         if mod_count > 1:
             filebodystr += f'\tst_module_info_{modName} * module_inst[{mod_count}] = ' + \
@@ -1477,7 +1477,7 @@ def fieldWriteChk_func(errCount_Write_var, str_Tab, fd_var, module_fd_var, strfd
     fdWriteCheckstr += f'{str_Tab}\tnRegFdVal = {module_fd_var};\n'
     fdWriteCheckstr += f'{str_Tab}\tif({module_fd_var} != {strfdMask})\n{str_Tab}'
     fdWriteCheckstr += '\t{\n'
-    fdWriteCheckstr += f'{str_Tab}\t\tgetCurrentTimeStr(szTimeBuf,sizeof szTimeBuf);\n'
+
     fdWriteCheckstr += f'{str_Tab}\t\tError("%s, Inst_%u # {fd_var}  [0x%X] NOt same as Write [{strfdMask}]! \\n", szTimeBuf, i, nRegFdVal);\n'
     fdWriteCheckstr += f'{str_Tab}\t\t++{errCount_Write_var};\n{str_Tab}'
     fdWriteCheckstr += '\t}\n'
